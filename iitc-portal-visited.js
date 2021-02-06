@@ -7,6 +7,7 @@
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @include             https://*.ingress.com/intel*
 // @include             http://*.ingress.com/intel*
+// @include             https://intel.ingress.com/*
 // @match                   https://*.ingress.com/intel*
 // @match                   http://*.ingress.com/intel*
 // @include             https://*.ingress.com/mission/*
@@ -53,7 +54,6 @@ function wrapper(plugin_info) {
     window.plugin.upcv.addFlag = function(guid,latLng,type) {
         window.plugin.upcv.removeFlag(guid,type);
         var p = window.portals[guid];
-        var levelNumber = p.options.level;
         var iconurl = ""
         var iconSize = ""
         if(type == 1){
@@ -72,6 +72,7 @@ function wrapper(plugin_info) {
             iconSize = [40,40]
         }
         var flag = L.marker(latLng, {
+            interactive: false,
             icon: L.icon({
             iconUrl: iconurl,
             iconAnchor: iconAnchor,
