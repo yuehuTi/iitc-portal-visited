@@ -2,7 +2,7 @@
 // @id                       iitc-plugin-portal-visited@takurua
 // @name                     IITC plugin: Show portal visited
 // @category            Layer
-// @version             1.0.0
+// @version             1.0.1
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
@@ -17,7 +17,7 @@
 function wrapper(plugin_info) {
     if(typeof window.plugin !== 'function') window.plugin = function() {};
     plugin_info.buildName = 'iitc';
-    plugin_info.dateTimeVersion = '20210206.213300';
+    plugin_info.dateTimeVersion = '20210207.175700';
     plugin_info.pluginId = 'upcv';
 
     // PLUGIN START ////////////////////////////////////////////////////////
