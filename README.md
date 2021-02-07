@@ -5,7 +5,7 @@ upc/v、scope:
 使用的nia官方的图片在po上套圈，红色upc 蓝色upv 橙色scope controler<br>
 <img src="preview.png"/><br>
 not upc/v、not scope controler:
-红色圈为未upc/v过的、 红色圈为仅upv、红色圈为未扫过scope controler<br>
+红色圈为未upc/v过的、 蓝色圈为仅upv、橙色圈为未扫过scope controler<br>
 
 四个highlighter：Portal UPC/V、Portal Scoped、Portal not UPC/V、Portal not Scoped<br>
 Portal UPC/V、Portal Scoped:<br>
