@@ -13,6 +13,7 @@
 // @grant               none
 // ==/UserScript==
 
+
 function wrapper(plugin_info) {
     if(typeof window.plugin !== 'function') window.plugin = function() {};
     plugin_info.buildName = 'iitc';
@@ -139,8 +140,8 @@ function wrapper(plugin_info) {
 
     var setup = function() {
         window.plugin.upcv.createLayer();
-        window.addPortalHighlighter('Portal visited', window.plugin.upcv.upcv);
-        window.addPortalHighlighter('Portal scoped', window.plugin.upcv.scoped);
+        window.addPortalHighlighter('Portal UPC/V', window.plugin.upcv.upcv);
+        window.addPortalHighlighter('Portal Scoped', window.plugin.upcv.scoped);
     }
     // PLUGIN END //////////////////////////////////////////////////////////
     setup.info = plugin_info;
