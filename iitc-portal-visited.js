@@ -124,7 +124,7 @@ function wrapper(plugin_info) {
         for (var guid in window.portals) {
             var p = window.portals[guid];
             if (p._map && p.options.data.title) {
-                var type = p.options.ent[2][18]
+                type = p.options.ent[2][18];
 
                 if (showupcv && type & 2) {
                     window.plugin.upcv.addFlag(guid, p.getLatLng(), 2);
@@ -163,9 +163,9 @@ function wrapper(plugin_info) {
         window.plugin.upcv.notscopeLayerGroup = new L.FeatureGroup();
 
         window.addLayerGroup('UPC/V', window.plugin.upcv.upcvLayerGroup, true);
-        window.addLayerGroup('Scope Controler', window.plugin.upcv.scopeLayerGroup, true);
+        window.addLayerGroup('Scope Controller', window.plugin.upcv.scopeLayerGroup, true);
         window.addLayerGroup('not UPC/V', window.plugin.upcv.notupcvLayerGroup, true);
-        window.addLayerGroup('not Scope Controler', window.plugin.upcv.notscopeLayerGroup, true);
+        window.addLayerGroup('not Scope Controller', window.plugin.upcv.notscopeLayerGroup, true);
 
         window.addHook('requestFinished', function() { setTimeout(function(){window.plugin.upcv.delayedUpdatePortalFlag(3.0);},1); });
         window.addHook('mapDataRefreshEnd', function() { window.plugin.upcv.delayedUpdatePortalFlag(0.5); });
