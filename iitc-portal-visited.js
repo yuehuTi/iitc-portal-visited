@@ -2,7 +2,7 @@
 // @id                       iitc-plugin-portal-visited@takurua
 // @name                     IITC plugin: Show portal visited
 // @category            Layer
-// @version             1.0.1
+// @version             1.1.0
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
