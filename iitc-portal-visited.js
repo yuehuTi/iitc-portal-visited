@@ -171,8 +171,11 @@ function wrapper(plugin_info) {
         window.addHook('mapDataRefreshEnd', function() { window.plugin.upcv.delayedUpdatePortalFlag(0.5); });
         window.map.on('overlayadd overlayremove', function() { setTimeout(function(){window.plugin.upcv.delayedUpdatePortalFlag(1.0);},1); });
     }
+
     window.plugin.upcv.upcv = function(data) {
         var type = data.portal.options.ent[2][18];
+        var portal_level = data.portal.options.data.level;
+        if (portal_level == undefined) return;
         if(type & 2){
             data.portal.setStyle({fillColor: 'indigo', fillOpacity: 1 });
         }else if(type & 1){
@@ -181,6 +184,8 @@ function wrapper(plugin_info) {
     }
     window.plugin.upcv.not_upcv = function(data) {
         var type = data.portal.options.ent[2][18];
+        var portal_level = data.portal.options.data.level;
+        if (portal_level == undefined) return;
         if(type&2){
             return
         }
@@ -194,12 +199,16 @@ function wrapper(plugin_info) {
     }
     window.plugin.upcv.scoped = function(data) {
         var type = data.portal.options.ent[2][18];
+        var portal_level = data.portal.options.data.level;
+        if (portal_level == undefined) return;
         if(type & 4){
             data.portal.setStyle({fillColor: 'yellow', fillOpacity: 1});
         }
     }
     window.plugin.upcv.not_scoped = function(data) {
         var type = data.portal.options.ent[2][18];
+        var portal_level = data.portal.options.data.level;
+        if (portal_level == undefined) return;
         if(!(type & 4)){
             data.portal.setStyle({fillColor: 'yellow', fillOpacity: 1 });
         }
