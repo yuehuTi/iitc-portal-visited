@@ -193,16 +193,25 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
     <option value="missing" ${window.plugin.upcv.settings.drawMissing?'selected':''}>Show missing uniques</option>
   </select>
 </div>
-<div><input type="checkbox" id="portal-visited-settings--show-visited" ${window.plugin.upcv.settings.showVisited?'checked':''}><label> Show visited</label></div>
-<div><label style="">upv color: </label><div style ="display:inline-table" id="portal-visited-settings--color-visited"></div></div>
-<div><label style="">upc color: </label><div style ="display:inline-table" id="portal-visited-settings--color-captured"></div></div>
 
+<div><input type="checkbox" id="portal-visited-settings--show-visited" ${window.plugin.upcv.settings.showVisited?'checked':''}><label> Show visited</label></div>
+<table>
+    <tr>
+        <td style="vertical-align: middle;">upv color: </td><td><div style ="display:inline-table" id="portal-visited-settings--color-visited"></div></td>
+        <td style="vertical-align: middle;">upc color: </td><td><div style ="display:inline-table" id="portal-visited-settings--color-captured"></div></td>
+    </tr>
+<table>
 <div><input type="checkbox" id="portal-visited-settings--show-scouted" ${window.plugin.upcv.settings.showScouted?'checked':''}><label> Show scouted</label></div>
-<div><label style="">scouted color: </label><div style ="display:inline-table" id="portal-visited-settings--color-scouted"></div></div>
+<table>
+    <tr>
+        <td style="vertical-align: middle;">scouted color: </td>
+        <td><div style ="display:inline-table" id="portal-visited-settings--color-scouted"></div></td>
+    </tr>
+<table>
 </div>`,
             title: 'Portal Visited Settings',
             id: 'plugin-portal-visited',
-            width: 'auto',
+            width: '300px',
             closeCallback: function () {
                 const elMode = document.getElementById('portal-visited-settings--display-mode');
                 const elVisited = document.getElementById('portal-visited-settings--show-visited');
