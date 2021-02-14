@@ -1,11 +1,13 @@
 // ==UserScript==
-// @id                       iitc-plugin-portal-visited@takurua
-// @name                     IITC plugin: Show portal visited
+// @id                  iitc-plugin-portal-visited@takurua
+// @name                IITC plugin: Show portal visited
 // @category            Layer
-// @version             1.1.0
+// @version             1.2.0
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
+// @description         show upc/upv and scout controller maker on portal, use layer to draw semicircle outside a portal or change color by using highlighter.
+//                      and thanks for https://github.com/EisFrei/IngressPortalHistoryFlags
 // @include             *://*.ingress.com/intel*
 // @include             *://intel.ingress.com/*
 // @match               *://*.ingress.com/intel*
@@ -21,205 +23,2622 @@ function wrapper(plugin_info) {
     plugin_info.pluginId = 'upcv';
 
     // PLUGIN START ////////////////////////////////////////////////////////
-    window.plugin.upcv = function() {
+    const KEY_SETTINGS  = "plugin-portal-visited";
+    const UPC_COLOR     = "indigo";
+    const UPV_COLOR     = "aqua";
+    const SCOUT_COLOR   = "orange";
+
+    const UPV_FLAG = 1;
+    const UPC_FLAG = 2;
+    const SCOUT_FLAG = 4;
+    
+    window.plugin.upcv = function() {};
+    window.plugin.upcv.layerGroup = {};
+
+// Spectrum Colorpicker v1.8.1
+// https://github.com/bgrins/spectrum
+// Author: Brian Grinstead
+// License: MIT
+(function (factory) {
+    "use strict";
+
+    if (typeof define === 'function' && define.amd) { // AMD
+        define(['jquery'], factory);
+    }
+    else if (typeof exports == "object" && typeof module == "object") { // CommonJS
+        module.exports = factory(require('jquery'));
+    }
+    else { // Browser
+        factory(jQuery);
+    }
+})(function($, undefined) {
+    "use strict";
+
+    var defaultOpts = {
+
+        // Callbacks
+        beforeShow: noop,
+        move: noop,
+        change: noop,
+        show: noop,
+        hide: noop,
+
+        // Options
+        color: false,
+        flat: false,
+        showInput: false,
+        allowEmpty: false,
+        showButtons: true,
+        clickoutFiresChange: true,
+        showInitial: false,
+        showPalette: false,
+        showPaletteOnly: false,
+        hideAfterPaletteSelect: false,
+        togglePaletteOnly: false,
+        showSelectionPalette: true,
+        localStorageKey: false,
+        appendTo: "body",
+        maxSelectionSize: 7,
+        cancelText: "cancel",
+        chooseText: "choose",
+        togglePaletteMoreText: "more",
+        togglePaletteLessText: "less",
+        clearText: "Clear Color Selection",
+        noColorSelectedText: "No Color Selected",
+        preferredFormat: false,
+        className: "", // Deprecated - use containerClassName and replacerClassName instead.
+        containerClassName: "",
+        replacerClassName: "",
+        showAlpha: false,
+        theme: "sp-light",
+        palette: [["#ffffff", "#000000", "#ff0000", "#ff8000", "#ffff00", "#008000", "#0000ff", "#4b0082", "#9400d3"]],
+        selectionPalette: [],
+        disabled: false,
+        offset: null
+    },
+    spectrums = [],
+    IE = !!/msie/i.exec( window.navigator.userAgent ),
+    rgbaSupport = (function() {
+        function contains( str, substr ) {
+            return !!~('' + str).indexOf(substr);
+        }
+
+        var elem = document.createElement('div');
+        var style = elem.style;
+        style.cssText = 'background-color:rgba(0,0,0,.5)';
+        return contains(style.backgroundColor, 'rgba') || contains(style.backgroundColor, 'hsla');
+    })(),
+    replaceInput = [
+        "<div class='sp-replacer'>",
+            "<div class='sp-preview'><div class='sp-preview-inner'></div></div>",
+            "<div class='sp-dd'>&#9660;</div>",
+        "</div>"
+    ].join(''),
+    markup = (function () {
+
+        // IE does not support gradients with multiple stops, so we need to simulate
+        //  that for the rainbow slider with 8 divs that each have a single gradient
+        var gradientFix = "";
+        if (IE) {
+            for (var i = 1; i <= 6; i++) {
+                gradientFix += "<div class='sp-" + i + "'></div>";
+            }
+        }
+
+        return [
+            "<div class='sp-container sp-hidden'>",
+                "<div class='sp-palette-container'>",
+                    "<div class='sp-palette sp-thumb sp-cf'></div>",
+                    "<div class='sp-palette-button-container sp-cf'>",
+                        "<button type='button' class='sp-palette-toggle'></button>",
+                    "</div>",
+                "</div>",
+                "<div class='sp-picker-container'>",
+                    "<div class='sp-top sp-cf'>",
+                        "<div class='sp-fill'></div>",
+                        "<div class='sp-top-inner'>",
+                            "<div class='sp-color'>",
+                                "<div class='sp-sat'>",
+                                    "<div class='sp-val'>",
+                                        "<div class='sp-dragger'></div>",
+                                    "</div>",
+                                "</div>",
+                            "</div>",
+                            "<div class='sp-clear sp-clear-display'>",
+                            "</div>",
+                            "<div class='sp-hue'>",
+                                "<div class='sp-slider'></div>",
+                                gradientFix,
+                            "</div>",
+                        "</div>",
+                        "<div class='sp-alpha'><div class='sp-alpha-inner'><div class='sp-alpha-handle'></div></div></div>",
+                    "</div>",
+                    "<div class='sp-input-container sp-cf'>",
+                        "<input class='sp-input' type='text' spellcheck='false'  />",
+                    "</div>",
+                    "<div class='sp-initial sp-thumb sp-cf'></div>",
+                    "<div class='sp-button-container sp-cf'>",
+                        "<a class='sp-cancel' href='#'></a>",
+                        "<button type='button' class='sp-choose'></button>",
+                    "</div>",
+                "</div>",
+            "</div>"
+        ].join("");
+    })();
+
+    function paletteTemplate (p, color, className, opts) {
+        var html = [];
+        for (var i = 0; i < p.length; i++) {
+            var current = p[i];
+            if(current) {
+                var tiny = tinycolor(current);
+                var c = tiny.toHsl().l < 0.5 ? "sp-thumb-el sp-thumb-dark" : "sp-thumb-el sp-thumb-light";
+                c += (tinycolor.equals(color, current)) ? " sp-thumb-active" : "";
+                var formattedString = tiny.toString(opts.preferredFormat || "rgb");
+                var swatchStyle = rgbaSupport ? ("background-color:" + tiny.toRgbString()) : "filter:" + tiny.toFilter();
+                html.push('<span title="' + formattedString + '" data-color="' + tiny.toRgbString() + '" class="' + c + '"><span class="sp-thumb-inner" style="' + swatchStyle + ';"></span></span>');
+            } else {
+                var cls = 'sp-clear-display';
+                html.push($('<div />')
+                    .append($('<span data-color="" style="background-color:transparent;" class="' + cls + '"></span>')
+                        .attr('title', opts.noColorSelectedText)
+                    )
+                    .html()
+                );
+            }
+        }
+        return "<div class='sp-cf " + className + "'>" + html.join('') + "</div>";
+    }
+
+    function hideAll() {
+        for (var i = 0; i < spectrums.length; i++) {
+            if (spectrums[i]) {
+                spectrums[i].hide();
+            }
+        }
+    }
+
+    function instanceOptions(o, callbackContext) {
+        var opts = $.extend({}, defaultOpts, o);
+        opts.callbacks = {
+            'move': bind(opts.move, callbackContext),
+            'change': bind(opts.change, callbackContext),
+            'show': bind(opts.show, callbackContext),
+            'hide': bind(opts.hide, callbackContext),
+            'beforeShow': bind(opts.beforeShow, callbackContext)
+        };
+
+        return opts;
+    }
+
+    function spectrum(element, o) {
+
+        var opts = instanceOptions(o, element),
+            flat = opts.flat,
+            showSelectionPalette = opts.showSelectionPalette,
+            localStorageKey = opts.localStorageKey,
+            theme = opts.theme,
+            callbacks = opts.callbacks,
+            resize = throttle(reflow, 10),
+            visible = false,
+            isDragging = false,
+            dragWidth = 0,
+            dragHeight = 0,
+            dragHelperHeight = 0,
+            slideHeight = 0,
+            slideWidth = 0,
+            alphaWidth = 0,
+            alphaSlideHelperWidth = 0,
+            slideHelperHeight = 0,
+            currentHue = 0,
+            currentSaturation = 0,
+            currentValue = 0,
+            currentAlpha = 1,
+            palette = [],
+            paletteArray = [],
+            paletteLookup = {},
+            selectionPalette = opts.selectionPalette.slice(0),
+            maxSelectionSize = opts.maxSelectionSize,
+            draggingClass = "sp-dragging",
+            shiftMovementDirection = null;
+
+        var doc = element.ownerDocument,
+            body = doc.body,
+            boundElement = $(element),
+            disabled = false,
+            container = $(markup, doc).addClass(theme),
+            pickerContainer = container.find(".sp-picker-container"),
+            dragger = container.find(".sp-color"),
+            dragHelper = container.find(".sp-dragger"),
+            slider = container.find(".sp-hue"),
+            slideHelper = container.find(".sp-slider"),
+            alphaSliderInner = container.find(".sp-alpha-inner"),
+            alphaSlider = container.find(".sp-alpha"),
+            alphaSlideHelper = container.find(".sp-alpha-handle"),
+            textInput = container.find(".sp-input"),
+            paletteContainer = container.find(".sp-palette"),
+            initialColorContainer = container.find(".sp-initial"),
+            cancelButton = container.find(".sp-cancel"),
+            clearButton = container.find(".sp-clear"),
+            chooseButton = container.find(".sp-choose"),
+            toggleButton = container.find(".sp-palette-toggle"),
+            isInput = boundElement.is("input"),
+            isInputTypeColor = isInput && boundElement.attr("type") === "color" && inputTypeColorSupport(),
+            shouldReplace = isInput && !flat,
+            replacer = (shouldReplace) ? $(replaceInput).addClass(theme).addClass(opts.className).addClass(opts.replacerClassName) : $([]),
+            offsetElement = (shouldReplace) ? replacer : boundElement,
+            previewElement = replacer.find(".sp-preview-inner"),
+            initialColor = opts.color || (isInput && boundElement.val()),
+            colorOnShow = false,
+            currentPreferredFormat = opts.preferredFormat,
+            clickoutFiresChange = !opts.showButtons || opts.clickoutFiresChange,
+            isEmpty = !initialColor,
+            allowEmpty = opts.allowEmpty && !isInputTypeColor;
+
+        function applyOptions() {
+
+            if (opts.showPaletteOnly) {
+                opts.showPalette = true;
+            }
+
+            toggleButton.text(opts.showPaletteOnly ? opts.togglePaletteMoreText : opts.togglePaletteLessText);
+
+            if (opts.palette) {
+                palette = opts.palette.slice(0);
+                paletteArray = Array.isArray(palette[0]) ? palette : [palette];
+                paletteLookup = {};
+                for (var i = 0; i < paletteArray.length; i++) {
+                    for (var j = 0; j < paletteArray[i].length; j++) {
+                        var rgb = tinycolor(paletteArray[i][j]).toRgbString();
+                        paletteLookup[rgb] = true;
+                    }
+                }
+            }
+
+            container.toggleClass("sp-flat", flat);
+            container.toggleClass("sp-input-disabled", !opts.showInput);
+            container.toggleClass("sp-alpha-enabled", opts.showAlpha);
+            container.toggleClass("sp-clear-enabled", allowEmpty);
+            container.toggleClass("sp-buttons-disabled", !opts.showButtons);
+            container.toggleClass("sp-palette-buttons-disabled", !opts.togglePaletteOnly);
+            container.toggleClass("sp-palette-disabled", !opts.showPalette);
+            container.toggleClass("sp-palette-only", opts.showPaletteOnly);
+            container.toggleClass("sp-initial-disabled", !opts.showInitial);
+            container.addClass(opts.className).addClass(opts.containerClassName);
+
+            reflow();
+        }
+
+        function initialize() {
+
+            if (IE) {
+                container.find("*:not(input)").attr("unselectable", "on");
+            }
+
+            applyOptions();
+
+            if (shouldReplace) {
+                boundElement.after(replacer).hide();
+            }
+
+            if (!allowEmpty) {
+                clearButton.hide();
+            }
+
+            if (flat) {
+                boundElement.after(container).hide();
+            }
+            else {
+
+                var appendTo = opts.appendTo === "parent" ? boundElement.parent() : $(opts.appendTo);
+                if (appendTo.length !== 1) {
+                    appendTo = $("body");
+                }
+
+                appendTo.append(container);
+            }
+
+            updateSelectionPaletteFromStorage();
+
+            offsetElement.on("click.spectrum touchstart.spectrum", function (e) {
+                if (!disabled) {
+                    toggle();
+                }
+
+                e.stopPropagation();
+
+                if (!$(e.target).is("input")) {
+                    e.preventDefault();
+                }
+            });
+
+            if(boundElement.is(":disabled") || (opts.disabled === true)) {
+                disable();
+            }
+
+            // Prevent clicks from bubbling up to document.  This would cause it to be hidden.
+            container.on("click", stopPropagation);
+
+            // Handle user typed input
+            textInput.on("change", setFromTextInput);
+            textInput.on("paste", function () {
+                setTimeout(setFromTextInput, 1);
+            });
+            textInput.on("keydown", function (e) { if (e.keyCode == 13) { setFromTextInput(); } });
+
+            cancelButton.text(opts.cancelText);
+            cancelButton.on("click.spectrum", function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                revert();
+                hide();
+            });
+
+            clearButton.attr("title", opts.clearText);
+            clearButton.on("click.spectrum", function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                isEmpty = true;
+                move();
+
+                if(flat) {
+                    //for the flat style, this is a change event
+                    updateOriginalInput(true);
+                }
+            });
+
+            chooseButton.text(opts.chooseText);
+            chooseButton.on("click.spectrum", function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if (IE && textInput.is(":focus")) {
+                    textInput.trigger('change');
+                }
+
+                if (isValid()) {
+                    updateOriginalInput(true);
+                    hide();
+                }
+            });
+
+            toggleButton.text(opts.showPaletteOnly ? opts.togglePaletteMoreText : opts.togglePaletteLessText);
+            toggleButton.on("click.spectrum", function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                opts.showPaletteOnly = !opts.showPaletteOnly;
+
+                // To make sure the Picker area is drawn on the right, next to the
+                // Palette area (and not below the palette), first move the Palette
+                // to the left to make space for the picker, plus 5px extra.
+                // The 'applyOptions' function puts the whole container back into place
+                // and takes care of the button-text and the sp-palette-only CSS class.
+                if (!opts.showPaletteOnly && !flat) {
+                    container.css('left', '-=' + (pickerContainer.outerWidth(true) + 5));
+                }
+                applyOptions();
+            });
+
+            draggable(alphaSlider, function (dragX, dragY, e) {
+                currentAlpha = (dragX / alphaWidth);
+                isEmpty = false;
+                if (e.shiftKey) {
+                    currentAlpha = Math.round(currentAlpha * 10) / 10;
+                }
+
+                move();
+            }, dragStart, dragStop);
+
+            draggable(slider, function (dragX, dragY) {
+                currentHue = parseFloat(dragY / slideHeight);
+                isEmpty = false;
+                if (!opts.showAlpha) {
+                    currentAlpha = 1;
+                }
+                move();
+            }, dragStart, dragStop);
+
+            draggable(dragger, function (dragX, dragY, e) {
+
+                // shift+drag should snap the movement to either the x or y axis.
+                if (!e.shiftKey) {
+                    shiftMovementDirection = null;
+                }
+                else if (!shiftMovementDirection) {
+                    var oldDragX = currentSaturation * dragWidth;
+                    var oldDragY = dragHeight - (currentValue * dragHeight);
+                    var furtherFromX = Math.abs(dragX - oldDragX) > Math.abs(dragY - oldDragY);
+
+                    shiftMovementDirection = furtherFromX ? "x" : "y";
+                }
+
+                var setSaturation = !shiftMovementDirection || shiftMovementDirection === "x";
+                var setValue = !shiftMovementDirection || shiftMovementDirection === "y";
+
+                if (setSaturation) {
+                    currentSaturation = parseFloat(dragX / dragWidth);
+                }
+                if (setValue) {
+                    currentValue = parseFloat((dragHeight - dragY) / dragHeight);
+                }
+
+                isEmpty = false;
+                if (!opts.showAlpha) {
+                    currentAlpha = 1;
+                }
+
+                move();
+
+            }, dragStart, dragStop);
+
+            if (!!initialColor) {
+                set(initialColor);
+
+                // In case color was black - update the preview UI and set the format
+                // since the set function will not run (default color is black).
+                updateUI();
+                currentPreferredFormat = opts.preferredFormat || tinycolor(initialColor).format;
+
+                addColorToSelectionPalette(initialColor);
+            }
+            else {
+                updateUI();
+            }
+
+            if (flat) {
+                show();
+            }
+
+            function paletteElementClick(e) {
+                if (e.data && e.data.ignore) {
+                    set($(e.target).closest(".sp-thumb-el").data("color"));
+                    move();
+                }
+                else {
+                    set($(e.target).closest(".sp-thumb-el").data("color"));
+                    move();
+
+                    // If the picker is going to close immediately, a palette selection
+                    // is a change.  Otherwise, it's a move only.
+                    if (opts.hideAfterPaletteSelect) {
+                        updateOriginalInput(true);
+                        hide();
+                    } else {
+                        updateOriginalInput();
+                    }
+                }
+
+                return false;
+            }
+
+            var paletteEvent = IE ? "mousedown.spectrum" : "click.spectrum touchstart.spectrum";
+            paletteContainer.on(paletteEvent, ".sp-thumb-el", paletteElementClick);
+            initialColorContainer.on(paletteEvent, ".sp-thumb-el:nth-child(1)", { ignore: true }, paletteElementClick);
+        }
+
+        function updateSelectionPaletteFromStorage() {
+
+            if (localStorageKey && window.localStorage) {
+
+                // Migrate old palettes over to new format.  May want to remove this eventually.
+                try {
+                    var oldPalette = window.localStorage[localStorageKey].split(",#");
+                    if (oldPalette.length > 1) {
+                        delete window.localStorage[localStorageKey];
+                        $.each(oldPalette, function(i, c) {
+                             addColorToSelectionPalette(c);
+                        });
+                    }
+                }
+                catch(e) { }
+
+                try {
+                    selectionPalette = window.localStorage[localStorageKey].split(";");
+                }
+                catch (e) { }
+            }
+        }
+
+        function addColorToSelectionPalette(color) {
+            if (showSelectionPalette) {
+                var rgb = tinycolor(color).toRgbString();
+                if (!paletteLookup[rgb] && $.inArray(rgb, selectionPalette) === -1) {
+                    selectionPalette.push(rgb);
+                    while(selectionPalette.length > maxSelectionSize) {
+                        selectionPalette.shift();
+                    }
+                }
+
+                if (localStorageKey && window.localStorage) {
+                    try {
+                        window.localStorage[localStorageKey] = selectionPalette.join(";");
+                    }
+                    catch(e) { }
+                }
+            }
+        }
+
+        function getUniqueSelectionPalette() {
+            var unique = [];
+            if (opts.showPalette) {
+                for (var i = 0; i < selectionPalette.length; i++) {
+                    var rgb = tinycolor(selectionPalette[i]).toRgbString();
+
+                    if (!paletteLookup[rgb]) {
+                        unique.push(selectionPalette[i]);
+                    }
+                }
+            }
+
+            return unique.reverse().slice(0, opts.maxSelectionSize);
+        }
+
+        function drawPalette() {
+
+            var currentColor = get();
+
+            var html = $.map(paletteArray, function (palette, i) {
+                return paletteTemplate(palette, currentColor, "sp-palette-row sp-palette-row-" + i, opts);
+            });
+
+            updateSelectionPaletteFromStorage();
+
+            if (selectionPalette) {
+                html.push(paletteTemplate(getUniqueSelectionPalette(), currentColor, "sp-palette-row sp-palette-row-selection", opts));
+            }
+
+            paletteContainer.html(html.join(""));
+        }
+
+        function drawInitial() {
+            if (opts.showInitial) {
+                var initial = colorOnShow;
+                var current = get();
+                initialColorContainer.html(paletteTemplate([initial, current], current, "sp-palette-row-initial", opts));
+            }
+        }
+
+        function dragStart() {
+            if (dragHeight <= 0 || dragWidth <= 0 || slideHeight <= 0) {
+                reflow();
+            }
+            isDragging = true;
+            container.addClass(draggingClass);
+            shiftMovementDirection = null;
+            boundElement.trigger('dragstart.spectrum', [ get() ]);
+        }
+
+        function dragStop() {
+            isDragging = false;
+            container.removeClass(draggingClass);
+            boundElement.trigger('dragstop.spectrum', [ get() ]);
+        }
+
+        function setFromTextInput() {
+
+            var value = textInput.val();
+
+            if ((value === null || value === "") && allowEmpty) {
+                set(null);
+                move();
+                updateOriginalInput();
+            }
+            else {
+                var tiny = tinycolor(value);
+                if (tiny.isValid()) {
+                    set(tiny);
+                    move();
+                    updateOriginalInput();
+                }
+                else {
+                    textInput.addClass("sp-validation-error");
+                }
+            }
+        }
+
+        function toggle() {
+            if (visible) {
+                hide();
+            }
+            else {
+                show();
+            }
+        }
+
+        function show() {
+            var event = $.Event('beforeShow.spectrum');
+
+            if (visible) {
+                reflow();
+                return;
+            }
+
+            boundElement.trigger(event, [ get() ]);
+
+            if (callbacks.beforeShow(get()) === false || event.isDefaultPrevented()) {
+                return;
+            }
+
+            hideAll();
+            visible = true;
+
+            $(doc).on("keydown.spectrum", onkeydown);
+            $(doc).on("click.spectrum", clickout);
+            $(window).on("resize.spectrum", resize);
+            replacer.addClass("sp-active");
+            container.removeClass("sp-hidden");
+
+            reflow();
+            updateUI();
+
+            colorOnShow = get();
+
+            drawInitial();
+            callbacks.show(colorOnShow);
+            boundElement.trigger('show.spectrum', [ colorOnShow ]);
+        }
+
+        function onkeydown(e) {
+            // Close on ESC
+            if (e.keyCode === 27) {
+                hide();
+            }
+        }
+
+        function clickout(e) {
+            // Return on right click.
+            if (e.button == 2) { return; }
+
+            // If a drag event was happening during the mouseup, don't hide
+            // on click.
+            if (isDragging) { return; }
+
+            if (clickoutFiresChange) {
+                updateOriginalInput(true);
+            }
+            else {
+                revert();
+            }
+            hide();
+        }
+
+        function hide() {
+            // Return if hiding is unnecessary
+            if (!visible || flat) { return; }
+            visible = false;
+
+            $(doc).off("keydown.spectrum", onkeydown);
+            $(doc).off("click.spectrum", clickout);
+            $(window).off("resize.spectrum", resize);
+
+            replacer.removeClass("sp-active");
+            container.addClass("sp-hidden");
+
+            callbacks.hide(get());
+            boundElement.trigger('hide.spectrum', [ get() ]);
+        }
+
+        function revert() {
+            set(colorOnShow, true);
+            updateOriginalInput(true);
+        }
+
+        function set(color, ignoreFormatChange) {
+            if (tinycolor.equals(color, get())) {
+                // Update UI just in case a validation error needs
+                // to be cleared.
+                updateUI();
+                return;
+            }
+
+            var newColor, newHsv;
+            if (!color && allowEmpty) {
+                isEmpty = true;
+            } else {
+                isEmpty = false;
+                newColor = tinycolor(color);
+                newHsv = newColor.toHsv();
+
+                currentHue = (newHsv.h % 360) / 360;
+                currentSaturation = newHsv.s;
+                currentValue = newHsv.v;
+                currentAlpha = newHsv.a;
+            }
+            updateUI();
+
+            if (newColor && newColor.isValid() && !ignoreFormatChange) {
+                currentPreferredFormat = opts.preferredFormat || newColor.getFormat();
+            }
+        }
+
+        function get(opts) {
+            opts = opts || { };
+
+            if (allowEmpty && isEmpty) {
+                return null;
+            }
+
+            return tinycolor.fromRatio({
+                h: currentHue,
+                s: currentSaturation,
+                v: currentValue,
+                a: Math.round(currentAlpha * 1000) / 1000
+            }, { format: opts.format || currentPreferredFormat });
+        }
+
+        function isValid() {
+            return !textInput.hasClass("sp-validation-error");
+        }
+
+        function move() {
+            updateUI();
+
+            callbacks.move(get());
+            boundElement.trigger('move.spectrum', [ get() ]);
+        }
+
+        function updateUI() {
+
+            textInput.removeClass("sp-validation-error");
+
+            updateHelperLocations();
+
+            // Update dragger background color (gradients take care of saturation and value).
+            var flatColor = tinycolor.fromRatio({ h: currentHue, s: 1, v: 1 });
+            dragger.css("background-color", flatColor.toHexString());
+
+            // Get a format that alpha will be included in (hex and names ignore alpha)
+            var format = currentPreferredFormat;
+            if (currentAlpha < 1 && !(currentAlpha === 0 && format === "name")) {
+                if (format === "hex" || format === "hex3" || format === "hex6" || format === "name") {
+                    format = "rgb";
+                }
+            }
+
+            var realColor = get({ format: format }),
+                displayColor = '';
+
+             //reset background info for preview element
+            previewElement.removeClass("sp-clear-display");
+            previewElement.css('background-color', 'transparent');
+
+            if (!realColor && allowEmpty) {
+                // Update the replaced elements background with icon indicating no color selection
+                previewElement.addClass("sp-clear-display");
+            }
+            else {
+                var realHex = realColor.toHexString(),
+                    realRgb = realColor.toRgbString();
+
+                // Update the replaced elements background color (with actual selected color)
+                if (rgbaSupport || realColor.alpha === 1) {
+                    previewElement.css("background-color", realRgb);
+                }
+                else {
+                    previewElement.css("background-color", "transparent");
+                    previewElement.css("filter", realColor.toFilter());
+                }
+
+                if (opts.showAlpha) {
+                    var rgb = realColor.toRgb();
+                    rgb.a = 0;
+                    var realAlpha = tinycolor(rgb).toRgbString();
+                    var gradient = "linear-gradient(left, " + realAlpha + ", " + realHex + ")";
+
+                    if (IE) {
+                        alphaSliderInner.css("filter", tinycolor(realAlpha).toFilter({ gradientType: 1 }, realHex));
+                    }
+                    else {
+                        alphaSliderInner.css("background", "-webkit-" + gradient);
+                        alphaSliderInner.css("background", "-moz-" + gradient);
+                        alphaSliderInner.css("background", "-ms-" + gradient);
+                        // Use current syntax gradient on unprefixed property.
+                        alphaSliderInner.css("background",
+                            "linear-gradient(to right, " + realAlpha + ", " + realHex + ")");
+                    }
+                }
+
+                displayColor = realColor.toString(format);
+            }
+
+            // Update the text entry input as it changes happen
+            if (opts.showInput) {
+                textInput.val(displayColor);
+            }
+
+            if (opts.showPalette) {
+                drawPalette();
+            }
+
+            drawInitial();
+        }
+
+        function updateHelperLocations() {
+            var s = currentSaturation;
+            var v = currentValue;
+
+            if(allowEmpty && isEmpty) {
+                //if selected color is empty, hide the helpers
+                alphaSlideHelper.hide();
+                slideHelper.hide();
+                dragHelper.hide();
+            }
+            else {
+                //make sure helpers are visible
+                alphaSlideHelper.show();
+                slideHelper.show();
+                dragHelper.show();
+
+                // Where to show the little circle in that displays your current selected color
+                var dragX = s * dragWidth;
+                var dragY = dragHeight - (v * dragHeight);
+                dragX = Math.max(
+                    -dragHelperHeight,
+                    Math.min(dragWidth - dragHelperHeight, dragX - dragHelperHeight)
+                );
+                dragY = Math.max(
+                    -dragHelperHeight,
+                    Math.min(dragHeight - dragHelperHeight, dragY - dragHelperHeight)
+                );
+                dragHelper.css({
+                    "top": dragY + "px",
+                    "left": dragX + "px"
+                });
+
+                var alphaX = currentAlpha * alphaWidth;
+                alphaSlideHelper.css({
+                    "left": (alphaX - (alphaSlideHelperWidth / 2)) + "px"
+                });
+
+                // Where to show the bar that displays your current selected hue
+                var slideY = (currentHue) * slideHeight;
+                slideHelper.css({
+                    "top": (slideY - slideHelperHeight) + "px"
+                });
+            }
+        }
+
+        function updateOriginalInput(fireCallback) {
+            var color = get(),
+                displayColor = '',
+                hasChanged = !tinycolor.equals(color, colorOnShow);
+
+            if (color) {
+                displayColor = color.toString(currentPreferredFormat);
+                // Update the selection palette with the current color
+                addColorToSelectionPalette(color);
+            }
+
+            if (isInput) {
+                boundElement.val(displayColor);
+            }
+
+            if (fireCallback && hasChanged) {
+                callbacks.change(color);
+                boundElement.trigger('change', [ color ]);
+            }
+        }
+
+        function reflow() {
+            if (!visible) {
+                return; // Calculations would be useless and wouldn't be reliable anyways
+            }
+            dragWidth = dragger.width();
+            dragHeight = dragger.height();
+            dragHelperHeight = dragHelper.height();
+            slideWidth = slider.width();
+            slideHeight = slider.height();
+            slideHelperHeight = slideHelper.height();
+            alphaWidth = alphaSlider.width();
+            alphaSlideHelperWidth = alphaSlideHelper.width();
+
+            if (!flat) {
+                container.css("position", "absolute");
+                if (opts.offset) {
+                    container.offset(opts.offset);
+                } else {
+                    container.offset(getOffset(container, offsetElement));
+                }
+            }
+
+            updateHelperLocations();
+
+            if (opts.showPalette) {
+                drawPalette();
+            }
+
+            boundElement.trigger('reflow.spectrum');
+        }
+
+        function destroy() {
+            boundElement.show();
+            offsetElement.off("click.spectrum touchstart.spectrum");
+            container.remove();
+            replacer.remove();
+            spectrums[spect.id] = null;
+        }
+
+        function option(optionName, optionValue) {
+            if (optionName === undefined) {
+                return $.extend({}, opts);
+            }
+            if (optionValue === undefined) {
+                return opts[optionName];
+            }
+
+            opts[optionName] = optionValue;
+
+            if (optionName === "preferredFormat") {
+                currentPreferredFormat = opts.preferredFormat;
+            }
+            applyOptions();
+        }
+
+        function enable() {
+            disabled = false;
+            boundElement.attr("disabled", false);
+            offsetElement.removeClass("sp-disabled");
+        }
+
+        function disable() {
+            hide();
+            disabled = true;
+            boundElement.attr("disabled", true);
+            offsetElement.addClass("sp-disabled");
+        }
+
+        function setOffset(coord) {
+            opts.offset = coord;
+            reflow();
+        }
+
+        initialize();
+
+        var spect = {
+            show: show,
+            hide: hide,
+            toggle: toggle,
+            reflow: reflow,
+            option: option,
+            enable: enable,
+            disable: disable,
+            offset: setOffset,
+            set: function (c) {
+                set(c);
+                updateOriginalInput();
+            },
+            get: get,
+            destroy: destroy,
+            container: container
+        };
+
+        spect.id = spectrums.push(spect) - 1;
+
+        return spect;
+    }
+
+    /**
+    * checkOffset - get the offset below/above and left/right element depending on screen position
+    * Thanks https://github.com/jquery/jquery-ui/blob/master/ui/jquery.ui.datepicker.js
+    */
+    function getOffset(picker, input) {
+        var extraY = 0;
+        var dpWidth = picker.outerWidth();
+        var dpHeight = picker.outerHeight();
+        var inputHeight = input.outerHeight();
+        var doc = picker[0].ownerDocument;
+        var docElem = doc.documentElement;
+        var viewWidth = docElem.clientWidth + $(doc).scrollLeft();
+        var viewHeight = docElem.clientHeight + $(doc).scrollTop();
+        var offset = input.offset();
+        var offsetLeft = offset.left;
+        var offsetTop = offset.top;
+
+        offsetTop += inputHeight;
+
+        offsetLeft -=
+            Math.min(offsetLeft, (offsetLeft + dpWidth > viewWidth && viewWidth > dpWidth) ?
+            Math.abs(offsetLeft + dpWidth - viewWidth) : 0);
+
+        offsetTop -=
+            Math.min(offsetTop, ((offsetTop + dpHeight > viewHeight && viewHeight > dpHeight) ?
+            Math.abs(dpHeight + inputHeight - extraY) : extraY));
+
+        return {
+            top: offsetTop,
+            bottom: offset.bottom,
+            left: offsetLeft,
+            right: offset.right,
+            width: offset.width,
+            height: offset.height
+        };
+    }
+
+    /**
+    * noop - do nothing
+    */
+    function noop() {
+
+    }
+
+    /**
+    * stopPropagation - makes the code only doing this a little easier to read in line
+    */
+    function stopPropagation(e) {
+        e.stopPropagation();
+    }
+
+    /**
+    * Create a function bound to a given object
+    * Thanks to underscore.js
+    */
+    function bind(func, obj) {
+        var slice = Array.prototype.slice;
+        var args = slice.call(arguments, 2);
+        return function () {
+            return func.apply(obj, args.concat(slice.call(arguments)));
+        };
+    }
+
+    /**
+    * Lightweight drag helper.  Handles containment within the element, so that
+    * when dragging, the x is within [0,element.width] and y is within [0,element.height]
+    */
+    function draggable(element, onmove, onstart, onstop) {
+        onmove = onmove || function () { };
+        onstart = onstart || function () { };
+        onstop = onstop || function () { };
+        var doc = document;
+        var dragging = false;
+        var offset = {};
+        var maxHeight = 0;
+        var maxWidth = 0;
+        var hasTouch = ('ontouchstart' in window);
+
+        var duringDragEvents = {};
+        duringDragEvents["selectstart"] = prevent;
+        duringDragEvents["dragstart"] = prevent;
+        duringDragEvents["touchmove mousemove"] = move;
+        duringDragEvents["touchend mouseup"] = stop;
+
+        function prevent(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.returnValue = false;
+        }
+
+        function move(e) {
+            if (dragging) {
+                // Mouseup happened outside of window
+                if (IE && doc.documentMode < 9 && !e.button) {
+                    return stop();
+                }
+
+                var t0 = e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0];
+                var pageX = t0 && t0.pageX || e.pageX;
+                var pageY = t0 && t0.pageY || e.pageY;
+
+                var dragX = Math.max(0, Math.min(pageX - offset.left, maxWidth));
+                var dragY = Math.max(0, Math.min(pageY - offset.top, maxHeight));
+
+                if (hasTouch) {
+                    // Stop scrolling in iOS
+                    prevent(e);
+                }
+
+                onmove.apply(element, [dragX, dragY, e]);
+            }
+        }
+
+        function start(e) {
+            var rightclick = (e.which) ? (e.which == 3) : (e.button == 2);
+
+            if (!rightclick && !dragging) {
+                if (onstart.apply(element, arguments) !== false) {
+                    dragging = true;
+                    maxHeight = $(element).height();
+                    maxWidth = $(element).width();
+                    offset = $(element).offset();
+
+                    $(doc).on(duringDragEvents);
+                    $(doc.body).addClass("sp-dragging");
+
+                    move(e);
+
+                    prevent(e);
+                }
+            }
+        }
+
+        function stop() {
+            if (dragging) {
+                $(doc).off(duringDragEvents);
+                $(doc.body).removeClass("sp-dragging");
+
+                // Wait a tick before notifying observers to allow the click event
+                // to fire in Chrome.
+                setTimeout(function() {
+                    onstop.apply(element, arguments);
+                }, 0);
+            }
+            dragging = false;
+        }
+
+        $(element).on("touchstart mousedown", start);
+    }
+
+    function throttle(func, wait, debounce) {
+        var timeout;
+        return function () {
+            var context = this, args = arguments;
+            var throttler = function () {
+                timeout = null;
+                func.apply(context, args);
+            };
+            if (debounce) clearTimeout(timeout);
+            if (debounce || !timeout) timeout = setTimeout(throttler, wait);
+        };
+    }
+
+    function inputTypeColorSupport() {
+        return $.fn.spectrum.inputTypeColorSupport();
+    }
+
+    /**
+    * Define a jQuery plugin
+    */
+    var dataID = "spectrum.id";
+    $.fn.spectrum = function (opts, extra) {
+
+        if (typeof opts == "string") {
+
+            var returnValue = this;
+            var args = Array.prototype.slice.call( arguments, 1 );
+
+            this.each(function () {
+                var spect = spectrums[$(this).data(dataID)];
+                if (spect) {
+                    var method = spect[opts];
+                    if (!method) {
+                        throw new Error( "Spectrum: no such method: '" + opts + "'" );
+                    }
+
+                    if (opts == "get") {
+                        returnValue = spect.get();
+                    }
+                    else if (opts == "container") {
+                        returnValue = spect.container;
+                    }
+                    else if (opts == "option") {
+                        returnValue = spect.option.apply(spect, args);
+                    }
+                    else if (opts == "destroy") {
+                        spect.destroy();
+                        $(this).removeData(dataID);
+                    }
+                    else {
+                        method.apply(spect, args);
+                    }
+                }
+            });
+
+            return returnValue;
+        }
+
+        // Initializing a new instance of spectrum
+        return this.spectrum("destroy").each(function () {
+            var options = $.extend({}, $(this).data(), opts);
+            var spect = spectrum(this, options);
+            $(this).data(dataID, spect.id);
+        });
     };
 
-    window.plugin.upcv.Layers = {};
-    window.plugin.upcv.upcvLayerGroup = null;
-    window.plugin.upcv.scoutLayerGroup = null;
-    window.plugin.upcv.notupcvLayerGroup = null;
-    window.plugin.upcv.notscoutLayerGroup = null;
-
-    window.plugin.upcv.removeFlag = function(guid,type) {
-        var previousLayer = window.plugin.upcv.Layers[guid];
-        if(previousLayer){
-            if (type == 1 || type ==2) {
-                window.plugin.upcv.upcvLayerGroup.removeLayer(previousLayer);
-            }else if (type == 4) {
-                window.plugin.upcv.scoutLayerGroup.removeLayer(previousLayer);
-            }
-            if (type == ~1 || type ==~2) {
-                window.plugin.upcv.notupcvLayerGroup.removeLayer(previousLayer);
-            }else if (type == ~4) {
-                window.plugin.upcv.notscoutLayerGroup.removeLayer(previousLayer);
-            }
-            delete plugin.upcv.Layers[guid];
+    $.fn.spectrum.load = true;
+    $.fn.spectrum.loadOpts = {};
+    $.fn.spectrum.draggable = draggable;
+    $.fn.spectrum.defaults = defaultOpts;
+    $.fn.spectrum.inputTypeColorSupport = function inputTypeColorSupport() {
+        if (typeof inputTypeColorSupport._cachedResult === "undefined") {
+            var colorInput = $("<input type='color'/>")[0]; // if color element is supported, value will default to not null
+            inputTypeColorSupport._cachedResult = colorInput.type === "color" && colorInput.value !== "";
         }
+        return inputTypeColorSupport._cachedResult;
+    };
+
+    $.spectrum = { };
+    $.spectrum.localization = { };
+    $.spectrum.palettes = { };
+
+    $.fn.spectrum.processNativeColorInputs = function () {
+        var colorInputs = $("input[type=color]");
+        if (colorInputs.length && !inputTypeColorSupport()) {
+            colorInputs.spectrum({
+                preferredFormat: "hex6"
+            });
+        }
+    };
+
+    // TinyColor v1.1.2
+    // https://github.com/bgrins/TinyColor
+    // Brian Grinstead, MIT License
+
+    (function() {
+
+    var trimLeft = /^[\s,#]+/,
+        trimRight = /\s+$/,
+        tinyCounter = 0,
+        math = Math,
+        mathRound = math.round,
+        mathMin = math.min,
+        mathMax = math.max,
+        mathRandom = math.random;
+
+    var tinycolor = function(color, opts) {
+
+        color = (color) ? color : '';
+        opts = opts || { };
+
+        // If input is already a tinycolor, return itself
+        if (color instanceof tinycolor) {
+           return color;
+        }
+        // If we are called as a function, call using new instead
+        if (!(this instanceof tinycolor)) {
+            return new tinycolor(color, opts);
+        }
+
+        var rgb = inputToRGB(color);
+        this._originalInput = color;
+        this._r = rgb.r;
+        this._g = rgb.g;
+        this._b = rgb.b;
+        this._a = rgb.a;
+        this._roundA = mathRound(1000 * this._a) / 1000;
+        this._format = opts.format || rgb.format;
+        this._gradientType = opts.gradientType;
+
+        // Don't let the range of [0,255] come back in [0,1].
+        // Potentially lose a little bit of precision here, but will fix issues where
+        // .5 gets interpreted as half of the total, instead of half of 1
+        // If it was supposed to be 128, this was already taken care of by `inputToRgb`
+        if (this._r < 1) { this._r = mathRound(this._r); }
+        if (this._g < 1) { this._g = mathRound(this._g); }
+        if (this._b < 1) { this._b = mathRound(this._b); }
+
+        this._ok = rgb.ok;
+        this._tc_id = tinyCounter++;
+    };
+
+    tinycolor.prototype = {
+        isDark: function() {
+            return this.getBrightness() < 128;
+        },
+        isLight: function() {
+            return !this.isDark();
+        },
+        isValid: function() {
+            return this._ok;
+        },
+        getOriginalInput: function() {
+          return this._originalInput;
+        },
+        getFormat: function() {
+            return this._format;
+        },
+        getAlpha: function() {
+            return this._a;
+        },
+        getBrightness: function() {
+            var rgb = this.toRgb();
+            return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+        },
+        setAlpha: function(value) {
+            this._a = boundAlpha(value);
+            this._roundA = mathRound(1000 * this._a) / 1000;
+            return this;
+        },
+        toHsv: function() {
+            var hsv = rgbToHsv(this._r, this._g, this._b);
+            return { h: hsv.h * 360, s: hsv.s, v: hsv.v, a: this._a };
+        },
+        toHsvString: function() {
+            var hsv = rgbToHsv(this._r, this._g, this._b);
+            var h = mathRound(hsv.h * 360), s = mathRound(hsv.s * 100), v = mathRound(hsv.v * 100);
+            return (this._a == 1) ?
+              "hsv("  + h + ", " + s + "%, " + v + "%)" :
+              "hsva(" + h + ", " + s + "%, " + v + "%, "+ this._roundA + ")";
+        },
+        toHsl: function() {
+            var hsl = rgbToHsl(this._r, this._g, this._b);
+            return { h: hsl.h * 360, s: hsl.s, l: hsl.l, a: this._a };
+        },
+        toHslString: function() {
+            var hsl = rgbToHsl(this._r, this._g, this._b);
+            var h = mathRound(hsl.h * 360), s = mathRound(hsl.s * 100), l = mathRound(hsl.l * 100);
+            return (this._a == 1) ?
+              "hsl("  + h + ", " + s + "%, " + l + "%)" :
+              "hsla(" + h + ", " + s + "%, " + l + "%, "+ this._roundA + ")";
+        },
+        toHex: function(allow3Char) {
+            return rgbToHex(this._r, this._g, this._b, allow3Char);
+        },
+        toHexString: function(allow3Char) {
+            return '#' + this.toHex(allow3Char);
+        },
+        toHex8: function() {
+            return rgbaToHex(this._r, this._g, this._b, this._a);
+        },
+        toHex8String: function() {
+            return '#' + this.toHex8();
+        },
+        toRgb: function() {
+            return { r: mathRound(this._r), g: mathRound(this._g), b: mathRound(this._b), a: this._a };
+        },
+        toRgbString: function() {
+            return (this._a == 1) ?
+              "rgb("  + mathRound(this._r) + ", " + mathRound(this._g) + ", " + mathRound(this._b) + ")" :
+              "rgba(" + mathRound(this._r) + ", " + mathRound(this._g) + ", " + mathRound(this._b) + ", " + this._roundA + ")";
+        },
+        toPercentageRgb: function() {
+            return { r: mathRound(bound01(this._r, 255) * 100) + "%", g: mathRound(bound01(this._g, 255) * 100) + "%", b: mathRound(bound01(this._b, 255) * 100) + "%", a: this._a };
+        },
+        toPercentageRgbString: function() {
+            return (this._a == 1) ?
+              "rgb("  + mathRound(bound01(this._r, 255) * 100) + "%, " + mathRound(bound01(this._g, 255) * 100) + "%, " + mathRound(bound01(this._b, 255) * 100) + "%)" :
+              "rgba(" + mathRound(bound01(this._r, 255) * 100) + "%, " + mathRound(bound01(this._g, 255) * 100) + "%, " + mathRound(bound01(this._b, 255) * 100) + "%, " + this._roundA + ")";
+        },
+        toName: function() {
+            if (this._a === 0) {
+                return "transparent";
+            }
+
+            if (this._a < 1) {
+                return false;
+            }
+
+            return hexNames[rgbToHex(this._r, this._g, this._b, true)] || false;
+        },
+        toFilter: function(secondColor) {
+            var hex8String = '#' + rgbaToHex(this._r, this._g, this._b, this._a);
+            var secondHex8String = hex8String;
+            var gradientType = this._gradientType ? "GradientType = 1, " : "";
+
+            if (secondColor) {
+                var s = tinycolor(secondColor);
+                secondHex8String = s.toHex8String();
+            }
+
+            return "progid:DXImageTransform.Microsoft.gradient("+gradientType+"startColorstr="+hex8String+",endColorstr="+secondHex8String+")";
+        },
+        toString: function(format) {
+            var formatSet = !!format;
+            format = format || this._format;
+
+            var formattedString = false;
+            var hasAlpha = this._a < 1 && this._a >= 0;
+            var needsAlphaFormat = !formatSet && hasAlpha && (format === "hex" || format === "hex6" || format === "hex3" || format === "name");
+
+            if (needsAlphaFormat) {
+                // Special case for "transparent", all other non-alpha formats
+                // will return rgba when there is transparency.
+                if (format === "name" && this._a === 0) {
+                    return this.toName();
+                }
+                return this.toRgbString();
+            }
+            if (format === "rgb") {
+                formattedString = this.toRgbString();
+            }
+            if (format === "prgb") {
+                formattedString = this.toPercentageRgbString();
+            }
+            if (format === "hex" || format === "hex6") {
+                formattedString = this.toHexString();
+            }
+            if (format === "hex3") {
+                formattedString = this.toHexString(true);
+            }
+            if (format === "hex8") {
+                formattedString = this.toHex8String();
+            }
+            if (format === "name") {
+                formattedString = this.toName();
+            }
+            if (format === "hsl") {
+                formattedString = this.toHslString();
+            }
+            if (format === "hsv") {
+                formattedString = this.toHsvString();
+            }
+
+            return formattedString || this.toHexString();
+        },
+
+        _applyModification: function(fn, args) {
+            var color = fn.apply(null, [this].concat([].slice.call(args)));
+            this._r = color._r;
+            this._g = color._g;
+            this._b = color._b;
+            this.setAlpha(color._a);
+            return this;
+        },
+        lighten: function() {
+            return this._applyModification(lighten, arguments);
+        },
+        brighten: function() {
+            return this._applyModification(brighten, arguments);
+        },
+        darken: function() {
+            return this._applyModification(darken, arguments);
+        },
+        desaturate: function() {
+            return this._applyModification(desaturate, arguments);
+        },
+        saturate: function() {
+            return this._applyModification(saturate, arguments);
+        },
+        greyscale: function() {
+            return this._applyModification(greyscale, arguments);
+        },
+        spin: function() {
+            return this._applyModification(spin, arguments);
+        },
+
+        _applyCombination: function(fn, args) {
+            return fn.apply(null, [this].concat([].slice.call(args)));
+        },
+        analogous: function() {
+            return this._applyCombination(analogous, arguments);
+        },
+        complement: function() {
+            return this._applyCombination(complement, arguments);
+        },
+        monochromatic: function() {
+            return this._applyCombination(monochromatic, arguments);
+        },
+        splitcomplement: function() {
+            return this._applyCombination(splitcomplement, arguments);
+        },
+        triad: function() {
+            return this._applyCombination(triad, arguments);
+        },
+        tetrad: function() {
+            return this._applyCombination(tetrad, arguments);
+        }
+    };
+
+    // If input is an object, force 1 into "1.0" to handle ratios properly
+    // String input requires "1.0" as input, so 1 will be treated as 1
+    tinycolor.fromRatio = function(color, opts) {
+        if (typeof color == "object") {
+            var newColor = {};
+            for (var i in color) {
+                if (color.hasOwnProperty(i)) {
+                    if (i === "a") {
+                        newColor[i] = color[i];
+                    }
+                    else {
+                        newColor[i] = convertToPercentage(color[i]);
+                    }
+                }
+            }
+            color = newColor;
+        }
+
+        return tinycolor(color, opts);
+    };
+
+    // Given a string or object, convert that input to RGB
+    // Possible string inputs:
+    //
+    //     "red"
+    //     "#f00" or "f00"
+    //     "#ff0000" or "ff0000"
+    //     "#ff000000" or "ff000000"
+    //     "rgb 255 0 0" or "rgb (255, 0, 0)"
+    //     "rgb 1.0 0 0" or "rgb (1, 0, 0)"
+    //     "rgba (255, 0, 0, 1)" or "rgba 255, 0, 0, 1"
+    //     "rgba (1.0, 0, 0, 1)" or "rgba 1.0, 0, 0, 1"
+    //     "hsl(0, 100%, 50%)" or "hsl 0 100% 50%"
+    //     "hsla(0, 100%, 50%, 1)" or "hsla 0 100% 50%, 1"
+    //     "hsv(0, 100%, 100%)" or "hsv 0 100% 100%"
+    //
+    function inputToRGB(color) {
+
+        var rgb = { r: 0, g: 0, b: 0 };
+        var a = 1;
+        var ok = false;
+        var format = false;
+
+        if (typeof color == "string") {
+            color = stringInputToObject(color);
+        }
+
+        if (typeof color == "object") {
+            if (color.hasOwnProperty("r") && color.hasOwnProperty("g") && color.hasOwnProperty("b")) {
+                rgb = rgbToRgb(color.r, color.g, color.b);
+                ok = true;
+                format = String(color.r).substr(-1) === "%" ? "prgb" : "rgb";
+            }
+            else if (color.hasOwnProperty("h") && color.hasOwnProperty("s") && color.hasOwnProperty("v")) {
+                color.s = convertToPercentage(color.s);
+                color.v = convertToPercentage(color.v);
+                rgb = hsvToRgb(color.h, color.s, color.v);
+                ok = true;
+                format = "hsv";
+            }
+            else if (color.hasOwnProperty("h") && color.hasOwnProperty("s") && color.hasOwnProperty("l")) {
+                color.s = convertToPercentage(color.s);
+                color.l = convertToPercentage(color.l);
+                rgb = hslToRgb(color.h, color.s, color.l);
+                ok = true;
+                format = "hsl";
+            }
+
+            if (color.hasOwnProperty("a")) {
+                a = color.a;
+            }
+        }
+
+        a = boundAlpha(a);
+
+        return {
+            ok: ok,
+            format: color.format || format,
+            r: mathMin(255, mathMax(rgb.r, 0)),
+            g: mathMin(255, mathMax(rgb.g, 0)),
+            b: mathMin(255, mathMax(rgb.b, 0)),
+            a: a
+        };
     }
 
-    window.plugin.upcv.addFlag = function(guid,latLng,type) {
-        window.plugin.upcv.removeFlag(guid,type);
-        var p = window.portals[guid];
-        var iconurl = "";
-        var iconSize = 25;
-        var layergroup = null;
-        if(type == 1){
-            iconurl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAAXNSR0IArs4c6QAAAKZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAhAAAAWodpAAQAAAABAAAAfAAAAAAAAABIAAAAAQAAAEgAAAABQWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCkAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAB4AAAAAG6hrMYAAAAJcEhZcwAACxMAAAsTAQCanBgAAASVaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA1LjQuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXBNTTpJbnN0YW5jZUlEPnhtcC5paWQ6NjkxMDEwMTM1NDVEMTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6NjkxMDEwMTQ1NDVEMTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDowM2ZiODFjMy02NGIyLTRkZDgtYTU5Yy01YTI4ZmFlOTcxODA8L3htcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD4KICAgICAgICAgPHhtcE1NOkRlcml2ZWRGcm9tIHJkZjpwYXJzZVR5cGU9IlJlc291cmNlIj4KICAgICAgICAgICAgPHN0UmVmOmluc3RhbmNlSUQ+eG1wLmlpZDozZTkwZTYyYS1kMzk2LTQxZTktYjRiMC04YzFlOTEyMmU4NTc8L3N0UmVmOmluc3RhbmNlSUQ+CiAgICAgICAgICAgIDxzdFJlZjpkb2N1bWVudElEPmFkb2JlOmRvY2lkOnBob3Rvc2hvcDoyYjY1ZDZiZS0wZmY0LTMwNDAtOGFkNi0xYzA2YTJhNDY2NWE8L3N0UmVmOmRvY3VtZW50SUQ+CiAgICAgICAgIDwveG1wTU06RGVyaXZlZEZyb20+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCk8L3htcDpDcmVhdG9yVG9vbD4KICAgICAgICAgPHRpZmY6T3JpZW50YXRpb24+MTwvdGlmZjpPcmllbnRhdGlvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+Cg6Ie5YAACQFSURBVHgB7Z1bkF3VeefXPn36IlnIAxiDyriYwTwEfMmMVUICXIP0QIgxE1ecQlCBFGAIHiPAySgTT15GR/OSsSdMDEZ4IBCgglOWKNvlBGMIDxJVBiSr5MzYMeQBk6JslzDXGGRJfd3z+6291+nTffY5fVrqbgl0lnR67732uv7/6/vWda+VhePY5CHPtoaQmcQtgYeQ5bOT21if1983Fj6QTYazsyx8aCrnGsIH8bUq5OE03J/C7yQ8LsN+UP/cj3N/iNu3+b2B21ex3I/9z2pZeJF3L0zWwr+8NhR+0diVTein1fSSrlb3x/KevBx/phHy2nlXhGzjI9A2y/zlv8//zdBw+AjW6/it5fcxyDlraCAMD9aK0mApgOgwyc/rFM85V/5HY6YpDAHnAULDgPf8+B/djONhbDKMYvESVj/it4ff7rHR8E9//H+zf+V+htlxRT7w3CMhb4TMqI4rY56OE5NnjfVh4LzTQj6b2HsuzD80MRHWA/hvk9iLhmph1fBAQZ5kjEteHiwMU2RILlO+5NB7+ZS8aM8f3Wi8+IvElPa6qeFhYJA7C43kjxI6cSnlT+Pj8Xo97PrcM9lPcds0kehXQ9bYZVratU3T4RLemJljbu5ZnQ+efHaYaiX2r9bmZ47l4VIo+T0SuGHFYBiRilEJnQqTJHwcltDaAaoLYVzgjEj6FHFOQrYFYhCyB4bLInNgPBzm/U7ef3MoC0/84Z7s5yl+iX7zxVD73L5sPNkdq+sxJVhizXgCooFqft+a8ImsFn4f4D4Dqdah4SDyMDUVVabSpkatc7OkaScySbY+niRtWa0WhpdbtDCQjdyGb+VT4W9f2xu+3yhV9ez8RcdL/GdJQUp5s4S/fCDUb/teNqrdA+vzkYOHwuUAeCPsXbqiTgtIlVjUg0qSBaFuYmX4WJqWNEj2OAmqDVL/L4PsA9hQ7z+Bm/uWLwuPXr8rU8rDnZ/Mh89YESZaNdRS5WHJCZbMlHFbwKceDBtRgTej+i6ioRR+jVKDxIMkTClF+x17UjuRkdLGldokTHBd/h6KIg00q5GnIfvu15eHHakl3pr3TmEutL1pXBIjmURUJ7OxVN99fv4p1NqfUK+ttyHz64konHZdhvmVyo+7ozApc52kPr03ik5u5hk91FKV0CVDC2VjRXthF4H/xc0/yL5rWErzG4fCZCJdu8U0rXlctHj+9wX5sv/ybCZ54asX5L8xMGW3Nlz1HihXrWF8p7QOHAnQZqL0VzSMslhPWmfSd+5u9IcbG2s0paYbbC1hdg9g1tvSn0SP8ZPo8Guf8vAN+tZbb302+2e9tGLi82KZufJ/VPE6IHDv6rCMRtRBA9q2Nt/M5c/I9KnWsagwpdn6dV4S2wL+JLRMwKTdI60HqcMH6mgEK2y7N5ry0ry2FiLv7StP+KN4kCbpiD0vqo4axKh5bNilQsRdzyaGheeRso5+HZ9/vmlPdrsh0AhbftO+cKhqAKfnGOZwmPI+h7P5v25tQd61Jv8wYG0bqYeLBZQ+Zeo+xFb0PEOPoOmHxI/YH1bFa6z7CHuUOH5JfPsR31exfp3Ozls4OSiHusNfHS6Xc7sSCk+lx3oahWQV9qcP18Mw/exo7GPb/8VfrFawnHdhLEIq8kta7VqHwxPhKeLbdMve7CetOJVuF/RifAturGdSC/mutflNRHL78npYcbBQxw4TzrebAx4ML6JE4TO2WLkPbxfF5HkysI/nf+T6fC0PL40NQeyK8FZKw1wZNL3hQFg5NBZOQxWchftzifA/cF3t/UnQagKi1oFz7o1esrn0ZnBICFEzDIFFAIsDWGy+ZU92ryG0YtZbiL256jmBvQU3ndCGfdq14T5U0/WovUCDw1am8c1HHUftiacIioJFnf0Wl51I3eOE9szARHghVQG9prFXd6rQyXo4B2ouRBs4iraB6mWlFb2F1WyRNlV4KfM9hSwcOVqirt6n0Dzw2p5wY4O+82KQLOALZPLsntWh7qDF1y7IPwAz337PQFhD61jjX4Ho1cQhZOrRunWXYQDKk/x5GDX85B/vy/ZXBZQmARzHTu+f+zC+Gulp1hX7837S4pbx5C1E1alO/MvV+Sq6cpfg4BoYvcRGolJN/W3hleT5EB0xMQwaYXtpL/zu55/NfqHK/tw+8VqYoc4mELOyPq9HgX3kilCzI3/XuvzjJO1R1NAqSrlKVImdM+MkRC2omYLYAfvEhybCGzD9IGrz/tv2ZM8Vr4u/xund1lJNdiOm1V8v96mg6NZwvc4m/c61+XlUBzdAzHXL6uEU63+I5m/RtsNTL9iqDCbBapC87iefl9+yO/uhA0FXPGLD8ehJ7iUR5q+jaaCKGxGELL97Xf5JWPoOgxaDtHRGgcY+bS/GMd8wUAs1G00UjFcI546xgfB/6F69kQIwLgGfTvTRA5DC7n4topRpC1SjZdaI7s4pQ5PhP1Mp3wZRp9som5yiWVckcs6CHePNwuhwFoYZZ7ed8embd2ffM5uNWXF1T2P122msqt93tRXwlNlt6/Ir0Tbf0AP6ZRTohwVkDqOTKaQgDuKj7g5A9B3MJHwZibWuDTsZIHlqV5hK8cwR3pK9Nu8Xrw+1DeV8MRK9kvz/VzL0R1QrK5wUQftEiSZRXXH2JUVoFP9RIMDvqk27s+1mphVjn+drukbcLTDVWOE5yyH3akYpHrYvSQtijGI71AO5Zj5DYmtl/3M7TeQv3vJM9pLx3nkOIz4vhPHjjdjZmEjAKeeEwdteKMbV77owP4tZ7C/RgLrS/jgSrRoWDquqjkYscTiGvyGqKMc+r4Hkr0u9no9UXRccdYy204s821HWuV9bl28kQdvtM2IcvRniZ33aLexxpHZwpFDHL1BSNqOW/s4AHOF569Iw2mgcf5Pnpq+TaTTy2sonwnAasaO6+h1AsHt4zmGKMtJse8SuVaUBrMgjf+xGOjVpnX7l53dnO6yTN1InA6lu5mW6kdAxoKKll43Tx70Mcr9rrGRmTnLNBKkcp46OEk7D5KFlg+HWG57O3t7x4XzIVlTjJ5nhvGNNg3ycR+o3ko/7L8pPYlDjTsi6TqBR22q3QfCqxF18cOa7MQq9Q7eS/Cn6yo8lzLGal6mMqFsIqa+2bU2+hrbxMxBcZ1wvqmX8dZNcuz4TdAuGaET9igx8Aal9yLjsby5WX7ZbXhbzXWuekOZrAeYOpPm9dPm69p0hJJKsumbYawiCJ5DdCzftzfYm7OeT7nkRnCKI/dypsA9JPN3Wsg0qIm0jNyWWFLsCY1JyGaj4MfX0H9z2g+z/qXrCc2HA0j6fRL9T3KqVwnlh0u7jnefnv0n9+jcMlHxUksHEcQ7r5c64Tbeuf8kCg9X2kxMHvWKAxujNqCIc+mvQqEAUvx27BL2Ra4d+qiT3MRau/UfJdW7UhWrvVnJF1byZR/Nqns07BfwxsRATNRpXG6tKbdPwgFVsXQ0rQGIt5mIvB3LRdDzHDS3zuY0t5ntLZw4/liNUNhpSV8gENU2ZYFsEZiAnQ4Nk7EFmUa7X0bGY+G4mbolvGvaZd4XDZZ5dkfkpZtUeAJPrkGRnrRwFo6abKcklydiGYQeMcL8mB3vWd37WLBS9mLkbXT1JcDnlZ6PqJseWHTrEVDb7q8hlKO6uRK4qJq3oiKGcIH/Ms3k3u2IhJhZ8HlXRlZLcAs2AmNPruF4OHA6Wk5b3HW/ho7tJE9Nxyq8WdtMiXEGXyAR1k377uKrlwUju7uxWY7FOejerZPM4l2nFAEneRp18M9pNbaiwVQpNGeYE2NfB/gBdkXVONSZuusXZVYJdZpP6dVQU26gLVpSzQt0SwhhqmCThg5S6B+msR3LtPpzo5EqEGIiF90jyJqY8HxIrMcOqGE3w5SzD+wGxlwO58LXclEuhZrmefuxK8CnLihK17fz8T52spy6wmKn4KyUfy6hukFxby48ltWypfaf3b6chO/o7sYgtbIK65QfZdanhVdbHXNqNmIu9HMiFnOgqcdTuo7DpSHBs+dFiYxjyXErMF8tYbRR0lF4HMUpyf0yL8WqjsN7pS247/GKS6mSxguQfi50YtrsubErs5UAR+29yY6tarjr5qSTY/mlqCCGu/52IT2FMNa7E6BQQ9uMjjFA5iGE/1294UiHp4ueEfpXIESsxEzsxFMtOwKAl63KBWj9ZbnQnV3FMocJTJcEuStftXefnlyO9VzmpraHkVKpmXk06tmwFgo7+QurnpkKi376pRkCMoiDQTxY7MRRLLiXqM/0lDiIncCNHukiczXRdtNxm2DUHNGhgEdFmP8+gdKXVjzPclg9qjMyJA1p4f02d8pCl6aVdcWy6yn3fbhYCYiVmYieGYolRmKI2jk8z/wzKCeMRFobNNrQ6DYBUSrBh+cUBzfL11A2abiMnU075oV5eOFAPfxRdM/zYaJkUj3b9Px0RiFiBmQ7EUCzFlEcFupNx8MgVpevlqpOjGQQrvXaiVRmo5pvxrHFRelGm4uOMP3Gy3vlcitqffJFZIcJY3m9UzcCopwcxEzsxBPvNYop0insnkn13SI4Y1L5ZzuRODlsjbCE4z/yE05d+COa3QvRjVRGxz9bqqXnPW9ypwrczpfUdm/7vtlmhZl6X4EbsxNC5cTEV245KukjPkBxB8kUHDob/pFXB4fSqpibBjfXM6jDr0WBAG95uLBd/s+q+o/TmrqFymY0rMQx8xqo4Lfpm3ggkDMVUbMWYQBS0NiM3vDgsV0j9DXIXOYTL5LhJsF/Wa+n3uYj8pY59YtJkQnyY9WcqBhzCV1xm47BZfzBjFkJH8CiGYimmEPiVUtAq1bSE4UYpVk1fKndGmbj0PhKcmNfCj6/pY8n2QR6bJcF3LSYnwAFK2C8J+39p7zKblvf926NA4Nkzix6I2IqxWBNcFMDZwZZSfFDO4ofzOEiaWLeR4LRQnJWBZxLMZwjUktFxMoGYJl3eSr/tTlc/ukDunbaGajZQx9PzIy4QAFOxFeOIded+ceRKzuTOrS/MS+KU+jZv7maDQr/UbRP8sh4SOzWuXJhed1G665YNzNWPXvtm4RBImIqxWIs5oXdS1UNyJndxXxMcKsVyW9sahbVMWLHhiTbOCFUaiJ/wcxJWGDzoovSddLIb/T5vJVZHYymmYivGYi3mYl8VZuQKzuK7xCEPcttsZN3JVkXYrXfDE4wr/6qM7e9YqVMC7tfBU7uqS1WV577d/BBI2Iq1DSmxJ4Q2akqLwZK7DW47lWKKn4L4wFd66xHxZXE3mw71LwGNMx8po0+mb4X60pugXPhrwlaswf4fxF4OOsRUp74+DIcjcU8xHG3BOYMl5boeP4/EN8Vkupc8KyT6Wrkij4+HfdUoHme56j8uJAJNjPPw9Yi9G01UGNV0fFFw6KeuUJlFvlyX/F6eL/J7Gt77cXaVmaQaGGb88y0/4dTBljLMKsd9u4VBoIlxHv5B7OWAkIuKtCUKOeNXl0PMJ9zy0ZtYB0+wVpcO9SpmMtgnpGPfd9yKHrMzfZ9rqembxUUgYczC95eJaWfJQaWaljs5hMszyv08C4LxuM6+FkXA78dSmG0pR0Wrnh/3hU3wNgd9i0VBIGEt9nLQyUTu4DByWWzW2iR4rauwuxi/TBiJe2KwbcK0u7L+nrbo3y04Ai0Yg70cyAXRtKnpFHXJ5Vqfa+WqvI8i2spkoYSTy3SdLhXPuyeG1lu7SHry1r8uDAIJa7GH3OeStq0KXQ7lEvMxua25mTb69t+6kgvPsU5u80gnupwb3tefDmxDZ8ksxB6afigXEFnQOCt2OYyr8thDW25r7pTuZtr0oRT5aoJLaSVQtyqKZovVcN8sCQKtWCcOIJL/laYml3Iqt258/aFSOitLBEFoP+gmI7D/vEFa6Tf7z1r0zaIiINapoSUHcoFx5UZHzuRUbmuwdbZFgV+lRGI55XQVSzVH3WTMkLd2Lj2+7ptFQCBhLgdyISdyUxWVXPJzvuBsV298UGb5addmKAWT7jXB25fjDnLcpqmoNsd9i0VDIGEeOYALOZGbqgjlUk4h9IM1/q7q2kVio09Ki+ZltweMd/0/xw6BgoOXIydwU5UQCY6cwq0q+jQmDjXK6Qwjr74yMGT+VdfeznDQf1hyBORALiInxF7I3sxkYOdksAsy3i+pp5QS3OZWcpNlbYpdW0sTtwdMD/3rkiAwA/OSC7kpZLMtCVGCeX+yBJ9Uynnist01NriZVs+NNid9i8VGYCbmb3Ukq0hH2oPqJKYLwzJEuSmpndJJSXARXt8cBwjMxYXkq5Xl1qnBtBK+a6HAXeVykeMgvydeErKOk/4RiySvcquK7pt3MQKqaL/7VZwhvLPhPQtG+ua4QCBvat3K5CQuuY470HGIDnN3dgmGRpZnHPTNcYDAXFwoqUqu3Kqi3y71dEcJjh48wCKZRrrpX5cMgZmYr+xIVpGgYi1Wye0bso1p86N1spzidJLoij+t2+Anu/51cRGYgXnJhdwU1LXF7WpKuXvToco4KoKTsjs87TgF4KgIg5unpU1Dpl3075YaATmQi8gJkcvRbIOd3445Vv2KQ5X7Swme7a545nCocijzDI+eqXbUt10yBAoOzoiceHBXhVF4I6cltz9TzAuJbnfNIMiAX5tTEM7wXCFduMFmu8u+zWIikDCPHMBF3FWhOIqvLVq5lFNI+pkq+kXZ4qddm8FSCfZrwmE+oThLB1ui8zanfYtFRCBhLgdyISdyUxWlXPKzJf2iyzt+Wi7SqnSsO37jHnODIJ9rgK0rDHzum8VFoHUFjRzIBca10R05i4so4bbGVgEvsgRklApZb20NLUOiNFggLBYe9xbN1g4Sn973rwuHQCvWiYPESUUsU3Ipp3Jbe20o/AKF/ZK7YeKpkmACrZVSvtqdYCoC7VstAQJiD00flws5qYpSDuMJmHAqtzUPKsbTj+IirWJlZbs/Pj5mHZDm3HiWHzdb+vVwBGQp/iSsxR4Cz4tcFB+Et0UP8ZPlDMOP5DaVgj1du0os6iDgw57CiZhfOB1qbKxNP/bvFgGBFozBPp6EChdEVP2RAi9KLveYmETw7lQqCk3tq3bjvDHRNT9NbHfRt1kMBNISZbGXg04mcjetbXfrLhJcZytbNpvej2hz+nr1Sj3cDsaNPkLY4Cmceu4Sl6/7ZgEQSBhzjNEZBLeh5CDN4c+IQe7kEC5fZovif/JlJJhPIn7F/dPurEYpsE6uMgNUw6Ns17OSZvolOtjab0lX4bSgdk2Ms/BbYi8HRNCmnuWM30TcHS+E77tFsQlhurDU8cWBy4ol9XS1QT3EtT74uEYXjf7mK9VALaBtE+MsXG0XRw6qgpez+MI/LZ/4NnfZqdfDrgPj4TAHMPkFeeXyHPwOshOqYn+J5+caUaO/jYMwLIpJ2Io12P+W2MtBh8gm6P+OyKFc6mYrzqOK9uFzz2Q/5bLT/aExcZVHvJv5R+keYwd4Rf8GX128vtlQm+my/3TUCCRsxVrMxZ5A4XimKS3GS+52llxGR81dduJTHr5ZXl3pUWkIrG5FT1P8OvZUPGUDfa1U0io99C2PCAExFVsxFmsxF/uqwCJXaeAjcYjDLZQJ/GZ52u+f4y6fQMRfHfTTw6K0VIVX88BEjzX35GsdeH5ulcO+3ZEjkDAVY7GOh1TG2rE9TLmSM7mTQ13IqdxGFZ2mov5wT/Zzism30q5qeKw02Pu1oRPKt3nytYcjX0GAlY77lvNGwLOIxVRsxThiXdFyNmA5QoLj7oNyFznELnEaCW7QGk5SzKlaf+tW8XhcjkdorDR++zJJQTidIa4/1cUFP++4t2VlAH3Lzgh40LRvxVaMxZrHSnmTI7mSM7nTn1zKqffNRtZzrxYBvLY3fJ8An7BSx4xWhhpfhRodaqP9gseax1O4yhO9itf9v0eCgKeiiaWYim3EuIWn1jDlBoJjo1fO5M73iUvvmwQ3doXJxDwe7ysDXtZViqfCFCVshWfWG1jsN3nTN0eMQMJQTMV2EowJrFLOSukdkSv6x/crtZFDuEwJaBJMGPmbLxaEL18WHmVK6mlGTgy48+HNvHVnNWrzKzkV89PpYIkUeP86PwScDhRDTgz/HTGNu9ZVUtsMV+nNIlfLw99rW3A4PVbVQjB94fLUDg9rQuTvTlKMv2aJaAZd3HhYdNwBgHT8xZc4s96dYNK5fLPc9h+7IJAONBFDpPF2v+AXW7zM4KglCN8tc25YruSMAhJPzWlx09FzeH152IHnXW4Vj6ncOq8MqEYrb4qdUM9ZMRG+Eu041rzRH+Eq4Zn7ErECM12KoViKKY+dyNWpx9t5GNkuudKiyrQFoBS79tbJYkrQ7Zz/qwp2Z7VOJKtE8sO4Yybjsxy1dq27jZ+1vt+qrgK8yk6sxEzsxFAsMVSx1XUv9uNyIjdyJFdyJnd6bDVtBPvyjBXFWDRHrT1KNN+gso8GJo20ygwQ0biB0W+7487z899UZXhYU5Xjvt00AmIkVmImdmIollwqxxUSB3KCKt8eOcJx4mw65OKukmBLUyKHmaP/wW7jb7BU013g6W11NIOHp8IY6uW9lK6/cTvbmHBKVkcfJ/gLpU6MxErMxE4MgaXjyKAcyAX93jeR761CKFdyVgVnJcE6TORwgvfzlJQvqYcx6aTq4mnWXwLz1O8x6oaPsp3t133tpiH9RtcsoHgUk7SpjViJmdiJYbvrwgYOJDGuqYPc/yk3qZB08tORYD28caio+Df9IPvy4YnwFCXMmt8J5EpVjSVaJtRLki/jjPoHDMemfzrW3OcT3bQed0+9+yDkXiZmYieGVfiIudjLgVxA7pd1lziq8qNdV4KtvD2FS4dI8SbmIw+w2bSJqFQHusM4EzWACvE08Os4pfqrWrYea+7ziWqU3HRCHAKwjUV014qVmIFJRz7EXOzlQC7ET27kqBuWHQNMnhw2swN+y97sJ0SymbpCY+fJZnybsaTxM7EZpXKcM25vSSQryaqUNk8niIV5FwOzKyYIwM2Sy6OaT2iBuNKIdV0H/N8sF3IiN5WuWyxxP7dxWc+9q0PdZjgjVn+NSrle8vBZWV+UCXU4xdKVkxHr5gc37cmuN7bUcvT+RDGtebbqUruVGMZqDRwQzGr1zDu1oQ2rBzjl9bMOaNy0z7Vz0yNWnXBUEuc0BnRPWbhe2xNuzNaFj1AXrOGcnlGiUCJnJM6ESjI/1fmEGaFQXEfG3s9qv6tpwP2rGX5pVxhrvMvXdTUY8DmLfm5qLZcNqstaJFcOZuAnIU0hycIoKzWG6fPuFXvfaXoht3AXnff2RxVjy+9rF+Qf4HylH7KC7/2cgVdJchk4/MZi5pTWJKVwiIz9mKG1P7iNM+vjFCUnXye11Vsq3jmuYu+BESq7MPZz7Qql1jLAqHGtyrqSy8qLYcakX2Gt3Mc//2z2i8RBrygQx/xMioB1umtoEjxTZ6E1LQSb90OE1JbYltDpv4cJSaah8CtE/AschPyQ761PHMNucfuOv23NE5MH1wLMHfZz0WaxtUwGK9s/EBKFgkp3jP7QUFzJMRUu5NSVvQn7+YAzb4IN3DqgrI8vg+DvmiIyYOOhK8kmnoSPI/lD+uELuIeWDYZbb+BYc0v7c9ilFia370hjF8gpP7XS/UwcHBoPX2Ud+bUCjSTGfi55r8RdfHDmuzEEgNU3SEQePkW9+1jCHKt5mcqI5g4hz3ZcEeJp019bl2+E5O3OamDmJLkMe5zFYIMjKCik+QUys9ljzX1n0//ZM8OYR6yWbt8RF5fZuBIjtWyd8qPQ347UnuPYcjn8WNkoNYOJXBh2ResgY9KSe+Xnd2c7rMo2PmKvZe5G1WywjpBgi5rb+sek5TT5r6a4PUyCnLqK6tqiOIeRwIxht5rbEeBvO6u6vujJ1/rz/FyPWG0c542wBo0oF8i5hsp0uxLDyXoq2Cud8itnhYTD+rajEUtgGMPfEAITOCb2GgYzGA3MI6u9NqpmR1BwNNu2x2czlwiA5CtpDn5Dr/SNYsOrB5J1MoU0D/jJBUtDD1By7qBF9mUPRzasnRwN89SuMJXi0e54MOb94vUhLm01PS6Qi+vTaFu4EsPJeqTWQmxd2xVnX9LlGAW/OEYAfldB7nasQyvGPs/XdI24l8CKBFh3ZDlq6ZOope9A1qCta2xjgnsIZ8oQBmqhhkSrtl+xUeLhyKi8N5J/49oSsUg281dZyef8rvb4iJjfVjLaaNEqrlt2aSvq7DbU8emugIzLbApkJXduA7lla3mccD5NdfU9s9mYFdfcAbW7OGqCDVJ1/UhZJ9+1Lv84sD9KZldBVJr2mjOjJAROo/GE8QH3ofDka6TgQc/PTcfZFk6KOL0XcK8F8QtDuPlpDdfwZ6tIPyfxiwO0z3WuW6bBaJ0ZJdYEkZeYLv12Mch5mASrQfK6n3xefsvu7IfWuVdQ586Os0s4HV/1koiOnme+yLN7ytGu2E/Ow7cZplxDt0DjXzRQz8YuVTxK3nlPw+D5Sf48DJBPpsMxZ4eWiEkHWPg+7pTemO2yfMa+dQc51xJ3Kyh+NuuXlcjzNZTYS+jyWa1IrF9kWojnLMgtKYmYGIaDGBSU37WfW7SWxWthCusCElwkPfXVGqjT960N90HQ9TSgAuu7BMH4ujY2WgDwVqL1N0Qpj+gxUGLdvJPsP05oz3jc22L1oe3Lxi0r+LIeUn+beDcwULFSsUM7Wei69mlxVmWEI3fiwJEOCsgDjlA1UPsJuypPR2on4AtuWhPK2PVNRGJ3YYWgYOwGdJwW65AY1bf1k59PDCvVNuHjYZnFYV37IOAfEZ/nUZsvxaNnOJ0kzbd2CLNpbXrdxc9NxtyHCgLPpQC5o9BqfufGbRNIgNLK/1ESY/R2ebj0ZnBICHHWKBZWsDiAxWb6uPcaQitmvYXYm6ueE9hbcNOuVDU+xQGRNfmHQWTbSD1cbC5piFg3a6Kb4rbnv9Zz0T+JH7FRZp9RYz1I2LTvwi+Jbz+kv4r16/Q/3sKJ5/7FIoa/OiQu591K1MKpkHkapK3C/nTCG7b+19i3t9GEP/fE0Jje8m187vVPTC9hx8l653OJb1M5K9TEqdfA5uNu0Qg2EbHxdUEY2VhOazHZsBnrP0PNnRqlgTPneZ43aCbagoKZRIYmAAvBi9I0iNobsP9pX5J6LZry0hS30m98532sB7gp++OxAPFoR9+9PG07qE1TnNFfj39iWHgeUetQvXhyzZ8zq3a7/ncwqHPFs+HwQjSmOqUn5b3T+wWxd3QqjfB89YL8N9gIZAvgXeX3rGRa47ymQ3Pu5jNv0wK+1eMUTE5auiJJc4RmfPgHY/4Vez+qD2LZOIq0SKyjessozIFZNwvRdrZkbtz6bPbP2McRu4SJz4tlloRgE99gwIJLnRUIUd2xVOVyUNyMel2viqWlLJ4Sbd/5SNQg3maalLlORKX3+urkZmaIcz5JrCNaEpv54YDrliH39rT60brWZTZzrcSYM6YeHbTmsUcvR+esdeJb0k89GDYizTczOHKRdd+vqa0A+yAJsyGmVC8U+EeX8ArfKW1cGVmMrf3l76HCsS0AsU/TXL7bRemJzNa8VwS3KFamccmNHfmXD4R6auWa8YOHwuWAdCP11aWqNevocRpMKE7VrvW01eoxJ7slDVYu4ySo5sfXZR3rmPoTuLnP77uc5MdNbCG7brnT0lbdLJY5JgSnzLS2tLVr2HdeEz7BziG/D3CfWTFY7E8d67CpSDZlIDZ45tvNSlEe8RWgrNMl1fo9c7Oack+M4Jf1FMRv+X2un3A2yqHM2fk74siPwuMxJTilWyBOPjtMtZbwv1qbn4neuxTgfg93GyB7RPF1EB/15wqRcRC3aWR9HRtGKbwFuhYNNoYfqUIk1ym8OClCnJKqdO4kTd+kHnkifVlv3Goov/Kzi7hAaTniYI4LgovUM7i+Pgycd1rIW4n23T0X5h+amAjrAdbRpIsYBVpl/9fujX1V15zCgA0cu0uS4TgfvEhF8fNGOy7+0Y3Gi/d0mYtf6caT0QfstNoAtEltf5i49vP+aXw97lZFrbvZGJjE+vF1Y5dpMQnH3pD04880UNWOJ88m2pT6mQcL1z7C7Tp+a/l9DMDPooE2LBlmSGQl3zFBr4piZJGrRjeyj/NInp1cSdRevxYaGkrW/y/x+CN+buy52+0B0w5yPDdNJJZx7EbLLFPz5TG+MU/HrUmTByZwC9hXDQjYEn/fWPgAk+xnQ8g5EPnvyNQHuV/F/fu5PxnvJ0HcMu7jqBH3DpfaJXub+zch+xWYVTp/xv2/cP8CY6Ivut9yagGbhmR6SVdye6yv/x8mQWc7C2XcyQAAAABJRU5ErkJggg=="
-            iconSize = 25;
-            layergroup = plugin.upcv.upcvLayerGroup;
+
+    // Conversion Functions
+    // --------------------
+
+    // `rgbToHsl`, `rgbToHsv`, `hslToRgb`, `hsvToRgb` modified from:
+    // <http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript>
+
+    // `rgbToRgb`
+    // Handle bounds / percentage checking to conform to CSS color spec
+    // <http://www.w3.org/TR/css3-color/>
+    // *Assumes:* r, g, b in [0, 255] or [0, 1]
+    // *Returns:* { r, g, b } in [0, 255]
+    function rgbToRgb(r, g, b){
+        return {
+            r: bound01(r, 255) * 255,
+            g: bound01(g, 255) * 255,
+            b: bound01(b, 255) * 255
+        };
+    }
+
+    // `rgbToHsl`
+    // Converts an RGB color value to HSL.
+    // *Assumes:* r, g, and b are contained in [0, 255] or [0, 1]
+    // *Returns:* { h, s, l } in [0,1]
+    function rgbToHsl(r, g, b) {
+
+        r = bound01(r, 255);
+        g = bound01(g, 255);
+        b = bound01(b, 255);
+
+        var max = mathMax(r, g, b), min = mathMin(r, g, b);
+        var h, s, l = (max + min) / 2;
+
+        if(max == min) {
+            h = s = 0; // achromatic
         }
-        if(type == 2){
-            iconurl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAAXNSR0IArs4c6QAAAKZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAhAAAAWodpAAQAAAABAAAAfAAAAAAAAABIAAAAAQAAAEgAAAABQWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCkAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAB4AAAAAG6hrMYAAAAJcEhZcwAACxMAAAsTAQCanBgAAASVaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA1LjQuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXBNTTpJbnN0YW5jZUlEPnhtcC5paWQ6OEFEQzY1QzQ1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6OEFEQzY1QzU1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDow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"
-            iconSize = 25;
-            layergroup = plugin.upcv.upcvLayerGroup;
-        }
-        if(type == 4){
-            iconurl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAAXNSR0IArs4c6QAAAKZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAhAAAAWodpAAQAAAABAAAAfAAAAAAAAABIAAAAAQAAAEgAAAABQWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCkAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAB4AAAAAG6hrMYAAAAJcEhZcwAACxMAAAsTAQCanBgAAASVaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA1LjQuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXBNTTpJbnN0YW5jZUlEPnhtcC5paWQ6OEFEQzY1QzA1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6OEFEQzY1QzE1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDow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"
-            iconSize = 30;
-            layergroup = plugin.upcv.scoutLayerGroup;
-        }
-        if(type == ~1){
-            iconurl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAAXNSR0IArs4c6QAAAKZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAhAAAAWodpAAQAAAABAAAAfAAAAAAAAABIAAAAAQAAAEgAAAABQWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCkAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAB4AAAAAG6hrMYAAAAJcEhZcwAACxMAAAsTAQCanBgAAASVaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA1LjQuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXBNTTpJbnN0YW5jZUlEPnhtcC5paWQ6NjkxMDEwMTM1NDVEMTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6NjkxMDEwMTQ1NDVEMTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDow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"
-            iconSize = 25;
-            layergroup = plugin.upcv.notupcvLayerGroup;
-        }
-        if(type == ~2){
-            iconurl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAAXNSR0IArs4c6QAAAKZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAhAAAAWodpAAQAAAABAAAAfAAAAAAAAABIAAAAAQAAAEgAAAABQWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCkAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAB4AAAAAG6hrMYAAAAJcEhZcwAACxMAAAsTAQCanBgAAASVaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA1LjQuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXBNTTpJbnN0YW5jZUlEPnhtcC5paWQ6OEFEQzY1QzQ1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6OEFEQzY1QzU1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDow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"
-            iconSize = 25;
-            layergroup = plugin.upcv.notupcvLayerGroup;
-        }
-        if(type == ~4){
-            iconurl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAAAXNSR0IArs4c6QAAAKZlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgExAAIAAAAhAAAAWodpAAQAAAABAAAAfAAAAAAAAABIAAAAAQAAAEgAAAABQWRvYmUgUGhvdG9zaG9wIDIyLjEgKE1hY2ludG9zaCkAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAB4oAMABAAAAAEAAAB4AAAAAG6hrMYAAAAJcEhZcwAACxMAAAsTAQCanBgAAASVaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA1LjQuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXBNTTpJbnN0YW5jZUlEPnhtcC5paWQ6OEFEQzY1QzA1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPnhtcC5kaWQ6OEFEQzY1QzE1NDY1MTFFQkJFOTdFOTNFNjNDOEUwNjI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDow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"
-            iconSize = 30;
-            layergroup = plugin.upcv.notscoutLayerGroup;
+        else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch(max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+
+            h /= 6;
         }
 
-        var flag = L.marker(latLng, {
-            interactive: false,
-            icon: L.icon({
-            iconUrl: iconurl,
-            iconAnchor: [iconSize/2, iconSize/2],
-            iconSize: [iconSize, iconSize],
-            className: 'no-pointer-events'
-            })
+        return { h: h, s: s, l: l };
+    }
+
+    // `hslToRgb`
+    // Converts an HSL color value to RGB.
+    // *Assumes:* h is contained in [0, 1] or [0, 360] and s and l are contained [0, 1] or [0, 100]
+    // *Returns:* { r, g, b } in the set [0, 255]
+    function hslToRgb(h, s, l) {
+        var r, g, b;
+
+        h = bound01(h, 360);
+        s = bound01(s, 100);
+        l = bound01(l, 100);
+
+        function hue2rgb(p, q, t) {
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        if(s === 0) {
+            r = g = b = l; // achromatic
+        }
+        else {
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1/3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1/3);
+        }
+
+        return { r: r * 255, g: g * 255, b: b * 255 };
+    }
+
+    // `rgbToHsv`
+    // Converts an RGB color value to HSV
+    // *Assumes:* r, g, and b are contained in the set [0, 255] or [0, 1]
+    // *Returns:* { h, s, v } in [0,1]
+    function rgbToHsv(r, g, b) {
+
+        r = bound01(r, 255);
+        g = bound01(g, 255);
+        b = bound01(b, 255);
+
+        var max = mathMax(r, g, b), min = mathMin(r, g, b);
+        var h, s, v = max;
+
+        var d = max - min;
+        s = max === 0 ? 0 : d / max;
+
+        if(max == min) {
+            h = 0; // achromatic
+        }
+        else {
+            switch(max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return { h: h, s: s, v: v };
+    }
+
+    // `hsvToRgb`
+    // Converts an HSV color value to RGB.
+    // *Assumes:* h is contained in [0, 1] or [0, 360] and s and v are contained in [0, 1] or [0, 100]
+    // *Returns:* { r, g, b } in the set [0, 255]
+     function hsvToRgb(h, s, v) {
+
+        h = bound01(h, 360) * 6;
+        s = bound01(s, 100);
+        v = bound01(v, 100);
+
+        var i = math.floor(h),
+            f = h - i,
+            p = v * (1 - s),
+            q = v * (1 - f * s),
+            t = v * (1 - (1 - f) * s),
+            mod = i % 6,
+            r = [v, q, p, p, t, v][mod],
+            g = [t, v, v, q, p, p][mod],
+            b = [p, p, t, v, v, q][mod];
+
+        return { r: r * 255, g: g * 255, b: b * 255 };
+    }
+
+    // `rgbToHex`
+    // Converts an RGB color to hex
+    // Assumes r, g, and b are contained in the set [0, 255]
+    // Returns a 3 or 6 character hex
+    function rgbToHex(r, g, b, allow3Char) {
+
+        var hex = [
+            pad2(mathRound(r).toString(16)),
+            pad2(mathRound(g).toString(16)),
+            pad2(mathRound(b).toString(16))
+        ];
+
+        // Return a 3 character hex if possible
+        if (allow3Char && hex[0].charAt(0) == hex[0].charAt(1) && hex[1].charAt(0) == hex[1].charAt(1) && hex[2].charAt(0) == hex[2].charAt(1)) {
+            return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0);
+        }
+
+        return hex.join("");
+    }
+        // `rgbaToHex`
+        // Converts an RGBA color plus alpha transparency to hex
+        // Assumes r, g, b and a are contained in the set [0, 255]
+        // Returns an 8 character hex
+        function rgbaToHex(r, g, b, a) {
+
+            var hex = [
+                pad2(convertDecimalToHex(a)),
+                pad2(mathRound(r).toString(16)),
+                pad2(mathRound(g).toString(16)),
+                pad2(mathRound(b).toString(16))
+            ];
+
+            return hex.join("");
+        }
+
+    // `equals`
+    // Can be called with any tinycolor input
+    tinycolor.equals = function (color1, color2) {
+        if (!color1 || !color2) { return false; }
+        return tinycolor(color1).toRgbString() == tinycolor(color2).toRgbString();
+    };
+    tinycolor.random = function() {
+        return tinycolor.fromRatio({
+            r: mathRandom(),
+            g: mathRandom(),
+            b: mathRandom()
         });
-        plugin.upcv.Layers[guid] = flag;
-        flag.addTo(layergroup);
+    };
+
+
+    // Modification Functions
+    // ----------------------
+    // Thanks to less.js for some of the basics here
+    // <https://github.com/cloudhead/less.js/blob/master/lib/less/functions.js>
+
+    function desaturate(color, amount) {
+        amount = (amount === 0) ? 0 : (amount || 10);
+        var hsl = tinycolor(color).toHsl();
+        hsl.s -= amount / 100;
+        hsl.s = clamp01(hsl.s);
+        return tinycolor(hsl);
     }
 
-    window.plugin.upcv.updatePortalFlag = function() {
-        if (!map.hasLayer(window.plugin.upcv.upcvLayerGroup) && 
-            !map.hasLayer(window.plugin.upcv.scoutLayerGroup) && 
-            !map.hasLayer(window.plugin.upcv.notupcvLayerGroup) && 
-            !map.hasLayer(window.plugin.upcv.notscoutLayerGroup)) {
-        return;
-        }
-        var showupcv = false
-        var showscout = false
-        var shownotupcv = false
-        var shownotscout = false
-        var type = 0
-        if (map.hasLayer(window.plugin.upcv.upcvLayerGroup)){
-            showupcv = true
-        }
-        if (map.hasLayer(window.plugin.upcv.scoutLayerGroup)){
-            showscout = true
-        }
-        if (map.hasLayer(window.plugin.upcv.notupcvLayerGroup)){
-            shownotupcv = true
-        }
-        if (map.hasLayer(window.plugin.upcv.notscoutLayerGroup)){
-            shownotscout = true
-        }
-        for (var guid in window.portals) {
-            var p = window.portals[guid];
-            if (p._map && p.options.data.title) {
-                type = p.options.ent[2][18];
+    function saturate(color, amount) {
+        amount = (amount === 0) ? 0 : (amount || 10);
+        var hsl = tinycolor(color).toHsl();
+        hsl.s += amount / 100;
+        hsl.s = clamp01(hsl.s);
+        return tinycolor(hsl);
+    }
 
-                if (showupcv && type & 2) {
-                    window.plugin.upcv.addFlag(guid, p.getLatLng(), 2);
-                }else if(showupcv && type & 1){
-                    window.plugin.upcv.addFlag(guid, p.getLatLng(), 1);
-                }
-                if(shownotupcv && (!type || (!(type & 1) && !(type & 2)))){
-                    window.plugin.upcv.addFlag(guid, p.getLatLng(), ~2);
-                } else if(shownotupcv && type & 1 && !(type & 2)){
-                    window.plugin.upcv.addFlag(guid, p.getLatLng(), ~1);
-                }
+    function greyscale(color) {
+        return tinycolor(color).desaturate(100);
+    }
 
-                if (showscout && type & 4) {
-                    window.plugin.upcv.addFlag(guid, p.getLatLng(), 4);
-                }
-                if (shownotscout && (!type || !(type & 4))) {
-                    window.plugin.upcv.addFlag(guid, p.getLatLng(), ~4);
-                }
+    function lighten (color, amount) {
+        amount = (amount === 0) ? 0 : (amount || 10);
+        var hsl = tinycolor(color).toHsl();
+        hsl.l += amount / 100;
+        hsl.l = clamp01(hsl.l);
+        return tinycolor(hsl);
+    }
+
+    function brighten(color, amount) {
+        amount = (amount === 0) ? 0 : (amount || 10);
+        var rgb = tinycolor(color).toRgb();
+        rgb.r = mathMax(0, mathMin(255, rgb.r - mathRound(255 * - (amount / 100))));
+        rgb.g = mathMax(0, mathMin(255, rgb.g - mathRound(255 * - (amount / 100))));
+        rgb.b = mathMax(0, mathMin(255, rgb.b - mathRound(255 * - (amount / 100))));
+        return tinycolor(rgb);
+    }
+
+    function darken (color, amount) {
+        amount = (amount === 0) ? 0 : (amount || 10);
+        var hsl = tinycolor(color).toHsl();
+        hsl.l -= amount / 100;
+        hsl.l = clamp01(hsl.l);
+        return tinycolor(hsl);
+    }
+
+    // Spin takes a positive or negative amount within [-360, 360] indicating the change of hue.
+    // Values outside of this range will be wrapped into this range.
+    function spin(color, amount) {
+        var hsl = tinycolor(color).toHsl();
+        var hue = (mathRound(hsl.h) + amount) % 360;
+        hsl.h = hue < 0 ? 360 + hue : hue;
+        return tinycolor(hsl);
+    }
+
+    // Combination Functions
+    // ---------------------
+    // Thanks to jQuery xColor for some of the ideas behind these
+    // <https://github.com/infusion/jQuery-xcolor/blob/master/jquery.xcolor.js>
+
+    function complement(color) {
+        var hsl = tinycolor(color).toHsl();
+        hsl.h = (hsl.h + 180) % 360;
+        return tinycolor(hsl);
+    }
+
+    function triad(color) {
+        var hsl = tinycolor(color).toHsl();
+        var h = hsl.h;
+        return [
+            tinycolor(color),
+            tinycolor({ h: (h + 120) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 240) % 360, s: hsl.s, l: hsl.l })
+        ];
+    }
+
+    function tetrad(color) {
+        var hsl = tinycolor(color).toHsl();
+        var h = hsl.h;
+        return [
+            tinycolor(color),
+            tinycolor({ h: (h + 90) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 180) % 360, s: hsl.s, l: hsl.l }),
+            tinycolor({ h: (h + 270) % 360, s: hsl.s, l: hsl.l })
+        ];
+    }
+
+    function splitcomplement(color) {
+        var hsl = tinycolor(color).toHsl();
+        var h = hsl.h;
+        return [
+            tinycolor(color),
+            tinycolor({ h: (h + 72) % 360, s: hsl.s, l: hsl.l}),
+            tinycolor({ h: (h + 216) % 360, s: hsl.s, l: hsl.l})
+        ];
+    }
+
+    function analogous(color, results, slices) {
+        results = results || 6;
+        slices = slices || 30;
+
+        var hsl = tinycolor(color).toHsl();
+        var part = 360 / slices;
+        var ret = [tinycolor(color)];
+
+        for (hsl.h = ((hsl.h - (part * results >> 1)) + 720) % 360; --results; ) {
+            hsl.h = (hsl.h + part) % 360;
+            ret.push(tinycolor(hsl));
+        }
+        return ret;
+    }
+
+    function monochromatic(color, results) {
+        results = results || 6;
+        var hsv = tinycolor(color).toHsv();
+        var h = hsv.h, s = hsv.s, v = hsv.v;
+        var ret = [];
+        var modification = 1 / results;
+
+        while (results--) {
+            ret.push(tinycolor({ h: h, s: s, v: v}));
+            v = (v + modification) % 1;
+        }
+
+        return ret;
+    }
+
+    // Utility Functions
+    // ---------------------
+
+    tinycolor.mix = function(color1, color2, amount) {
+        amount = (amount === 0) ? 0 : (amount || 50);
+
+        var rgb1 = tinycolor(color1).toRgb();
+        var rgb2 = tinycolor(color2).toRgb();
+
+        var p = amount / 100;
+        var w = p * 2 - 1;
+        var a = rgb2.a - rgb1.a;
+
+        var w1;
+
+        if (w * a == -1) {
+            w1 = w;
+        } else {
+            w1 = (w + a) / (1 + w * a);
+        }
+
+        w1 = (w1 + 1) / 2;
+
+        var w2 = 1 - w1;
+
+        var rgba = {
+            r: rgb2.r * w1 + rgb1.r * w2,
+            g: rgb2.g * w1 + rgb1.g * w2,
+            b: rgb2.b * w1 + rgb1.b * w2,
+            a: rgb2.a * p  + rgb1.a * (1 - p)
+        };
+
+        return tinycolor(rgba);
+    };
+
+
+    // Readability Functions
+    // ---------------------
+    // <http://www.w3.org/TR/AERT#color-contrast>
+
+    // `readability`
+    // Analyze the 2 colors and returns an object with the following properties:
+    //    `brightness`: difference in brightness between the two colors
+    //    `color`: difference in color/hue between the two colors
+    tinycolor.readability = function(color1, color2) {
+        var c1 = tinycolor(color1);
+        var c2 = tinycolor(color2);
+        var rgb1 = c1.toRgb();
+        var rgb2 = c2.toRgb();
+        var brightnessA = c1.getBrightness();
+        var brightnessB = c2.getBrightness();
+        var colorDiff = (
+            Math.max(rgb1.r, rgb2.r) - Math.min(rgb1.r, rgb2.r) +
+            Math.max(rgb1.g, rgb2.g) - Math.min(rgb1.g, rgb2.g) +
+            Math.max(rgb1.b, rgb2.b) - Math.min(rgb1.b, rgb2.b)
+        );
+
+        return {
+            brightness: Math.abs(brightnessA - brightnessB),
+            color: colorDiff
+        };
+    };
+
+    // `readable`
+    // http://www.w3.org/TR/AERT#color-contrast
+    // Ensure that foreground and background color combinations provide sufficient contrast.
+    // *Example*
+    //    tinycolor.isReadable("#000", "#111") => false
+    tinycolor.isReadable = function(color1, color2) {
+        var readability = tinycolor.readability(color1, color2);
+        return readability.brightness > 125 && readability.color > 500;
+    };
+
+    // `mostReadable`
+    // Given a base color and a list of possible foreground or background
+    // colors for that base, returns the most readable color.
+    // *Example*
+    //    tinycolor.mostReadable("#123", ["#fff", "#000"]) => "#000"
+    tinycolor.mostReadable = function(baseColor, colorList) {
+        var bestColor = null;
+        var bestScore = 0;
+        var bestIsReadable = false;
+        for (var i=0; i < colorList.length; i++) {
+
+            // We normalize both around the "acceptable" breaking point,
+            // but rank brightness constrast higher than hue.
+
+            var readability = tinycolor.readability(baseColor, colorList[i]);
+            var readable = readability.brightness > 125 && readability.color > 500;
+            var score = 3 * (readability.brightness / 125) + (readability.color / 500);
+
+            if ((readable && ! bestIsReadable) ||
+                (readable && bestIsReadable && score > bestScore) ||
+                ((! readable) && (! bestIsReadable) && score > bestScore)) {
+                bestIsReadable = readable;
+                bestScore = score;
+                bestColor = tinycolor(colorList[i]);
             }
         }
+        return bestColor;
+    };
+
+
+    // Big List of Colors
+    // ------------------
+    // <http://www.w3.org/TR/css3-color/#svg-color>
+    var names = tinycolor.names = {
+        aliceblue: "f0f8ff",
+        antiquewhite: "faebd7",
+        aqua: "0ff",
+        aquamarine: "7fffd4",
+        azure: "f0ffff",
+        beige: "f5f5dc",
+        bisque: "ffe4c4",
+        black: "000",
+        blanchedalmond: "ffebcd",
+        blue: "00f",
+        blueviolet: "8a2be2",
+        brown: "a52a2a",
+        burlywood: "deb887",
+        burntsienna: "ea7e5d",
+        cadetblue: "5f9ea0",
+        chartreuse: "7fff00",
+        chocolate: "d2691e",
+        coral: "ff7f50",
+        cornflowerblue: "6495ed",
+        cornsilk: "fff8dc",
+        crimson: "dc143c",
+        cyan: "0ff",
+        darkblue: "00008b",
+        darkcyan: "008b8b",
+        darkgoldenrod: "b8860b",
+        darkgray: "a9a9a9",
+        darkgreen: "006400",
+        darkgrey: "a9a9a9",
+        darkkhaki: "bdb76b",
+        darkmagenta: "8b008b",
+        darkolivegreen: "556b2f",
+        darkorange: "ff8c00",
+        darkorchid: "9932cc",
+        darkred: "8b0000",
+        darksalmon: "e9967a",
+        darkseagreen: "8fbc8f",
+        darkslateblue: "483d8b",
+        darkslategray: "2f4f4f",
+        darkslategrey: "2f4f4f",
+        darkturquoise: "00ced1",
+        darkviolet: "9400d3",
+        deeppink: "ff1493",
+        deepskyblue: "00bfff",
+        dimgray: "696969",
+        dimgrey: "696969",
+        dodgerblue: "1e90ff",
+        firebrick: "b22222",
+        floralwhite: "fffaf0",
+        forestgreen: "228b22",
+        fuchsia: "f0f",
+        gainsboro: "dcdcdc",
+        ghostwhite: "f8f8ff",
+        gold: "ffd700",
+        goldenrod: "daa520",
+        gray: "808080",
+        green: "008000",
+        greenyellow: "adff2f",
+        grey: "808080",
+        honeydew: "f0fff0",
+        hotpink: "ff69b4",
+        indianred: "cd5c5c",
+        indigo: "4b0082",
+        ivory: "fffff0",
+        khaki: "f0e68c",
+        lavender: "e6e6fa",
+        lavenderblush: "fff0f5",
+        lawngreen: "7cfc00",
+        lemonchiffon: "fffacd",
+        lightblue: "add8e6",
+        lightcoral: "f08080",
+        lightcyan: "e0ffff",
+        lightgoldenrodyellow: "fafad2",
+        lightgray: "d3d3d3",
+        lightgreen: "90ee90",
+        lightgrey: "d3d3d3",
+        lightpink: "ffb6c1",
+        lightsalmon: "ffa07a",
+        lightseagreen: "20b2aa",
+        lightskyblue: "87cefa",
+        lightslategray: "789",
+        lightslategrey: "789",
+        lightsteelblue: "b0c4de",
+        lightyellow: "ffffe0",
+        lime: "0f0",
+        limegreen: "32cd32",
+        linen: "faf0e6",
+        magenta: "f0f",
+        maroon: "800000",
+        mediumaquamarine: "66cdaa",
+        mediumblue: "0000cd",
+        mediumorchid: "ba55d3",
+        mediumpurple: "9370db",
+        mediumseagreen: "3cb371",
+        mediumslateblue: "7b68ee",
+        mediumspringgreen: "00fa9a",
+        mediumturquoise: "48d1cc",
+        mediumvioletred: "c71585",
+        midnightblue: "191970",
+        mintcream: "f5fffa",
+        mistyrose: "ffe4e1",
+        moccasin: "ffe4b5",
+        navajowhite: "ffdead",
+        navy: "000080",
+        oldlace: "fdf5e6",
+        olive: "808000",
+        olivedrab: "6b8e23",
+        orange: "ffa500",
+        orangered: "ff4500",
+        orchid: "da70d6",
+        palegoldenrod: "eee8aa",
+        palegreen: "98fb98",
+        paleturquoise: "afeeee",
+        palevioletred: "db7093",
+        papayawhip: "ffefd5",
+        peachpuff: "ffdab9",
+        peru: "cd853f",
+        pink: "ffc0cb",
+        plum: "dda0dd",
+        powderblue: "b0e0e6",
+        purple: "800080",
+        rebeccapurple: "663399",
+        red: "f00",
+        rosybrown: "bc8f8f",
+        royalblue: "4169e1",
+        saddlebrown: "8b4513",
+        salmon: "fa8072",
+        sandybrown: "f4a460",
+        seagreen: "2e8b57",
+        seashell: "fff5ee",
+        sienna: "a0522d",
+        silver: "c0c0c0",
+        skyblue: "87ceeb",
+        slateblue: "6a5acd",
+        slategray: "708090",
+        slategrey: "708090",
+        snow: "fffafa",
+        springgreen: "00ff7f",
+        steelblue: "4682b4",
+        tan: "d2b48c",
+        teal: "008080",
+        thistle: "d8bfd8",
+        tomato: "ff6347",
+        turquoise: "40e0d0",
+        violet: "ee82ee",
+        wheat: "f5deb3",
+        white: "fff",
+        whitesmoke: "f5f5f5",
+        yellow: "ff0",
+        yellowgreen: "9acd32"
+    };
+
+    // Make it easy to access colors via `hexNames[hex]`
+    var hexNames = tinycolor.hexNames = flip(names);
+
+
+    // Utilities
+    // ---------
+
+    // `{ 'name1': 'val1' }` becomes `{ 'val1': 'name1' }`
+    function flip(o) {
+        var flipped = { };
+        for (var i in o) {
+            if (o.hasOwnProperty(i)) {
+                flipped[o[i]] = i;
+            }
+        }
+        return flipped;
     }
 
-    window.plugin.upcv.delayedUpdatePortalFlag = function(wait) {
-        if (window.plugin.upcv.timer === undefined) {
-            window.plugin.upcv.timer = setTimeout (function() {
-                window.plugin.upcv.timer = undefined;
-                window.plugin.upcv.updatePortalFlag();
-            }, wait*1000);
+    // Return a valid alpha value [0,1] with all invalid values being set to 1
+    function boundAlpha(a) {
+        a = parseFloat(a);
+
+        if (isNaN(a) || a < 0 || a > 1) {
+            a = 1;
+        }
+
+        return a;
+    }
+
+    // Take input from [0, n] and return it as [0, 1]
+    function bound01(n, max) {
+        if (isOnePointZero(n)) { n = "100%"; }
+
+        var processPercent = isPercentage(n);
+        n = mathMin(max, mathMax(0, parseFloat(n)));
+
+        // Automatically convert percentage into number
+        if (processPercent) {
+            n = parseInt(n * max, 10) / 100;
+        }
+
+        // Handle floating point rounding errors
+        if ((math.abs(n - max) < 0.000001)) {
+            return 1;
+        }
+
+        // Convert into [0, 1] range if it isn't already
+        return (n % max) / parseFloat(max);
+    }
+
+    // Force a number between 0 and 1
+    function clamp01(val) {
+        return mathMin(1, mathMax(0, val));
+    }
+
+    // Parse a base-16 hex value into a base-10 integer
+    function parseIntFromHex(val) {
+        return parseInt(val, 16);
+    }
+
+    // Need to handle 1.0 as 100%, since once it is a number, there is no difference between it and 1
+    // <http://stackoverflow.com/questions/7422072/javascript-how-to-detect-number-as-a-decimal-including-1-0>
+    function isOnePointZero(n) {
+        return typeof n == "string" && n.indexOf('.') != -1 && parseFloat(n) === 1;
+    }
+
+    // Check to see if string passed in is a percentage
+    function isPercentage(n) {
+        return typeof n === "string" && n.indexOf('%') != -1;
+    }
+
+    // Force a hex value to have 2 characters
+    function pad2(c) {
+        return c.length == 1 ? '0' + c : '' + c;
+    }
+
+    // Replace a decimal with it's percentage value
+    function convertToPercentage(n) {
+        if (n <= 1) {
+            n = (n * 100) + "%";
+        }
+
+        return n;
+    }
+
+    // Converts a decimal to a hex value
+    function convertDecimalToHex(d) {
+        return Math.round(parseFloat(d) * 255).toString(16);
+    }
+    // Converts a hex value to a decimal
+    function convertHexToDecimal(h) {
+        return (parseIntFromHex(h) / 255);
+    }
+
+    var matchers = (function() {
+
+        // <http://www.w3.org/TR/css3-values/#integers>
+        var CSS_INTEGER = "[-\\+]?\\d+%?";
+
+        // <http://www.w3.org/TR/css3-values/#number-value>
+        var CSS_NUMBER = "[-\\+]?\\d*\\.\\d+%?";
+
+        // Allow positive/negative integer/number.  Don't capture the either/or, just the entire outcome.
+        var CSS_UNIT = "(?:" + CSS_NUMBER + ")|(?:" + CSS_INTEGER + ")";
+
+        // Actual matching.
+        // Parentheses and commas are optional, but not required.
+        // Whitespace can take the place of commas or opening paren
+        var PERMISSIVE_MATCH3 = "[\\s|\\(]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")\\s*\\)?";
+        var PERMISSIVE_MATCH4 = "[\\s|\\(]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")\\s*\\)?";
+
+        return {
+            rgb: new RegExp("rgb" + PERMISSIVE_MATCH3),
+            rgba: new RegExp("rgba" + PERMISSIVE_MATCH4),
+            hsl: new RegExp("hsl" + PERMISSIVE_MATCH3),
+            hsla: new RegExp("hsla" + PERMISSIVE_MATCH4),
+            hsv: new RegExp("hsv" + PERMISSIVE_MATCH3),
+            hsva: new RegExp("hsva" + PERMISSIVE_MATCH4),
+            hex3: /^([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
+            hex6: /^([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/,
+            hex8: /^([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/
+        };
+    })();
+
+    // `stringInputToObject`
+    // Permissive string parsing.  Take in a number of formats, and output an object
+    // based on detected format.  Returns `{ r, g, b }` or `{ h, s, l }` or `{ h, s, v}`
+    function stringInputToObject(color) {
+
+        color = color.replace(trimLeft,'').replace(trimRight, '').toLowerCase();
+        var named = false;
+        if (names[color]) {
+            color = names[color];
+            named = true;
+        }
+        else if (color == 'transparent') {
+            return { r: 0, g: 0, b: 0, a: 0, format: "name" };
+        }
+
+        // Try to match string input using regular expressions.
+        // Keep most of the number bounding out of this function - don't worry about [0,1] or [0,100] or [0,360]
+        // Just return an object and let the conversion functions handle that.
+        // This way the result will be the same whether the tinycolor is initialized with string or object.
+        var match;
+        if ((match = matchers.rgb.exec(color))) {
+            return { r: match[1], g: match[2], b: match[3] };
+        }
+        if ((match = matchers.rgba.exec(color))) {
+            return { r: match[1], g: match[2], b: match[3], a: match[4] };
+        }
+        if ((match = matchers.hsl.exec(color))) {
+            return { h: match[1], s: match[2], l: match[3] };
+        }
+        if ((match = matchers.hsla.exec(color))) {
+            return { h: match[1], s: match[2], l: match[3], a: match[4] };
+        }
+        if ((match = matchers.hsv.exec(color))) {
+            return { h: match[1], s: match[2], v: match[3] };
+        }
+        if ((match = matchers.hsva.exec(color))) {
+            return { h: match[1], s: match[2], v: match[3], a: match[4] };
+        }
+        if ((match = matchers.hex8.exec(color))) {
+            return {
+                a: convertHexToDecimal(match[1]),
+                r: parseIntFromHex(match[2]),
+                g: parseIntFromHex(match[3]),
+                b: parseIntFromHex(match[4]),
+                format: named ? "name" : "hex8"
+            };
+        }
+        if ((match = matchers.hex6.exec(color))) {
+            return {
+                r: parseIntFromHex(match[1]),
+                g: parseIntFromHex(match[2]),
+                b: parseIntFromHex(match[3]),
+                format: named ? "name" : "hex"
+            };
+        }
+        if ((match = matchers.hex3.exec(color))) {
+            return {
+                r: parseIntFromHex(match[1] + '' + match[1]),
+                g: parseIntFromHex(match[2] + '' + match[2]),
+                b: parseIntFromHex(match[3] + '' + match[3]),
+                format: named ? "name" : "hex"
+            };
+        }
+
+        return false;
+    }
+
+    window.tinycolor = tinycolor;
+    })();
+
+    $(function () {
+        if ($.fn.spectrum.load) {
+            $.fn.spectrum.processNativeColorInputs();
+        }
+    });
+
+});
+
+    // these code copied from https://github.com/EisFrei/IngressPortalHistoryFlags, made some modifications.
+    function svgToIcon(str, s) {
+        const url = ("data:image/svg+xml," + encodeURIComponent(str)).replace(/#/g, '%23');
+        return new L.Icon({
+            iconUrl: url,
+            iconSize: [s, s],
+            iconAnchor: [s / 2, s / 2],
+            className: 'no-pointer-events', //allows users to click on portal under the unique marker
+        })
+    }
+    function drawPortalFlags(portal) {
+        const drawMissing = window.plugin.upcv.settings.drawMissing;
+        var type = portal.options.ent[2][18];
+        portal._historyLayer = new L.LayerGroup();
+
+        if(!(type & UPC_FLAG) && (type & UPV_FLAG)){
+            L.marker(portal._latlng, {
+                icon: window.plugin.upcv.iconVisited[portal.options.level],
+                interactive: false,
+                keyboard: false,
+            }).addTo(portal._historyLayer);
+        }
+        if (drawMissing && !(type & UPV_FLAG) || !drawMissing && type & UPC_FLAG) {
+            L.marker(portal._latlng, {
+                icon: window.plugin.upcv.iconCaptured[portal.options.level],
+                interactive: false,
+                keyboard: false,
+            }).addTo(portal._historyLayer);
+        }
+        if (drawMissing && !(type & SCOUT_FLAG) || !drawMissing && type & SCOUT_FLAG) {
+            L.marker(portal._latlng, {
+                icon: window.plugin.upcv.iconScouted[portal.options.level],
+                interactive: false,
+                keyboard: false,
+            }).addTo(portal._historyLayer);
+        }
+        portal._historyLayer.addTo(window.plugin.upcv.layerGroup);
+    }
+
+    function drawAllFlags() {
+        window.plugin.upcv.layerGroup.clearLayers();
+        var tileParams = window.getCurrentZoomTileParameters ? window.getCurrentZoomTileParameters() : window.getMapZoomTileParameters();
+        if (tileParams.level !== 0) {
+            return;
+        }
+
+        for (let id in window.portals) {
+            drawPortalFlags(window.portals[id]);
         }
     }
 
-    window.plugin.upcv.createLayer = function() {
-        window.plugin.upcv.upcvLayerGroup = new L.FeatureGroup();
-        window.plugin.upcv.scoutLayerGroup = new L.FeatureGroup();
-        window.plugin.upcv.notupcvLayerGroup = new L.FeatureGroup();
-        window.plugin.upcv.notscoutLayerGroup = new L.FeatureGroup();
-
-        window.addLayerGroup('UPC/V', window.plugin.upcv.upcvLayerGroup, true);
-        window.addLayerGroup('Scout Controller', window.plugin.upcv.scoutLayerGroup, true);
-        window.addLayerGroup('not UPC/V', window.plugin.upcv.notupcvLayerGroup, true);
-        window.addLayerGroup('not Scout Controller', window.plugin.upcv.notscoutLayerGroup, true);
-
-        window.addHook('requestFinished', function() { setTimeout(function(){window.plugin.upcv.delayedUpdatePortalFlag(3.0);},1); });
-        window.addHook('mapDataRefreshEnd', function() { window.plugin.upcv.delayedUpdatePortalFlag(0.5); });
-        window.map.on('overlayadd overlayremove', function() { setTimeout(function(){window.plugin.upcv.delayedUpdatePortalFlag(1.0);},1); });
+    function getSVGString(size, color, parts, offset) {
+        const path = size * Math.PI/(2*parts);
+        const cap = size * Math.PI*(1-1/(2*parts))
+        const arcOffset = path / parts * (parts - 1);
+        const rotate = 180/parts+(parts-1)*135+offset*90;
+        return `<svg width="${(size+4)}" height="${(size+4)}" xmlns="http://www.w3.org/2000/svg"><circle stroke="${color}" stroke-width="4" fill="transparent" cx="${(size+4)/2}" cy="${(size+4)/2}" r="${(size/2)}" stroke-dasharray="${path}, ${cap}" stroke-dashoffset="${arcOffset}" transform="rotate(${rotate}, ${((size+4)/2)}, ${((size+4)/2)})" /></svg>`;
     }
+
+    function createIcons() {
+        var LEVEL_TO_RADIUS = [7, 7, 7, 7, 8, 8, 9, 10, 11];
+        window.plugin.upcv.iconCaptured = {};
+        window.plugin.upcv.iconVisited = {};
+        window.plugin.upcv.iconScouted = {};
+
+        const parts = window.plugin.upcv.settings.showVisited + window.plugin.upcv.settings.showScouted;
+
+        LEVEL_TO_RADIUS.forEach((el, idx) => {
+            let size = el * 2 + 8;
+            let offset = 0;
+            if (window.plugin.upcv.settings.showVisited) {
+                window.plugin.upcv.iconVisited[idx] = svgToIcon(getSVGString(size, window.plugin.upcv.settings.upv_color, parts, offset), size + 4);
+                window.plugin.upcv.iconCaptured[idx] = svgToIcon(getSVGString(size, window.plugin.upcv.settings.upc_color, parts, offset), size + 4);
+                offset++;
+            } else {
+                window.plugin.upcv.iconVisited[idx] = svgToIcon(getSVGString(size, 'transparent', parts, offset), size + 4);
+                window.plugin.upcv.iconCaptured[idx] = svgToIcon(getSVGString(size, 'transparent', parts, offset), size + 4);
+            }
+            if (window.plugin.upcv.settings.showScouted) {
+                window.plugin.upcv.iconScouted[idx] = svgToIcon(getSVGString(size, window.plugin.upcv.settings.scouted_color, parts, offset), size + 4);
+            } else {
+                window.plugin.upcv.iconScouted[idx] = svgToIcon(getSVGString(size, 'transparent', parts, offset), size + 4);
+            }
+        });
+    }
+
+    window.plugin.upcv.removePortalFromMap = function (data) {
+        if (!data.portal._historyLayer) {
+            return;
+        }
+        window.plugin.upcv.layerGroup.removeLayer(data.portal._historyLayer);
+    }
+
+    window.plugin.upcv.addToPortalMap = function (data) {
+        var type = data.portal.options.ent[2][18];
+        var portal_level = data.portal.options.data.level;
+        if (portal_level == undefined) return;
+        var tileParams = window.getCurrentZoomTileParameters ? window.getCurrentZoomTileParameters() : window.getMapZoomTileParameters();
+        if (tileParams.level === 0) {
+            drawPortalFlags(data.portal);
+        } else {
+            window.plugin.upcv.removePortalFromMap(data);
+        }
+    }
+
+    window.plugin.upcv.toggleDisplayMode = function () {
+        var tmp_upv_color = window.plugin.upcv.settings.upv_color;
+        var tmp_upc_color = window.plugin.upcv.settings.upc_color;
+        var tmp_souted_color = window.plugin.upcv.settings.scouted_color;
+
+        dialog({
+            html: `<div id="portal-visited-settings">
+<div>
+  <select id="portal-visited-settings--display-mode">
+    <option value="received" ${window.plugin.upcv.settings.drawMissing?'':'selected'}>Show uniques received</option>
+    <option value="missing" ${window.plugin.upcv.settings.drawMissing?'selected':''}>Show missing uniques</option>
+  </select>
+</div>
+<div><input type="checkbox" id="portal-visited-settings--show-visited" ${window.plugin.upcv.settings.showVisited?'checked':''}><label> Show visited</label></div>
+<div><label>upv color:</label><input type="color" id="portal-visited-settings--color-visited"></input></div>
+<div><label>upc color:</label><input type="color" id="portal-visited-settings--color-captured"></input></div>
+
+<div><input type="checkbox" id="portal-visited-settings--show-scouted" ${window.plugin.upcv.settings.showScouted?'checked':''}><label> Show scouted</label></div>
+<div><label>scouted color:</label><input type="color" id="portal-visited-settings--color-scouted"></input></div>
+</div>`,
+            title: 'Portal Visited Settings',
+            id: 'plugin-portal-visited',
+            width: 'auto',
+            closeCallback: function () {
+                const elMode = document.getElementById('portal-visited-settings--display-mode');
+                const elVisited = document.getElementById('portal-visited-settings--show-visited');
+                const elScouted = document.getElementById('portal-visited-settings--show-scouted');
+
+                const color_upv = document.getElementById('portal-visited-settings--color-visited');
+                const color_upc = document.getElementById('portal-visited-settings--color-captured');
+                const color_scouted = document.getElementById('portal-visited-settings--color-scouted');
+
+                window.plugin.upcv.settings.drawMissing = elMode.value === 'missing';
+                window.plugin.upcv.settings.showVisited = elVisited.checked;
+                window.plugin.upcv.settings.showScouted = elScouted.checked;
+
+                window.plugin.upcv.settings.upv_color = tmp_upv_color
+                window.plugin.upcv.settings.upc_color = tmp_upc_color
+                window.plugin.upcv.settings.scouted_color = tmp_souted_color
+
+                localStorage[KEY_SETTINGS] = JSON.stringify(window.plugin.upcv.settings);
+                createIcons();
+                drawAllFlags();
+            }
+        });
+        $('#portal-visited-settings--color-visited').spectrum({
+            flat: false,
+            showInput: false,
+            showButtons: false,
+            showPalette: true,
+            showPaletteOnly: false,
+            showSelectionPalette: false,
+            palette: [ ['#a24ac3','#514ac3','#4aa8c3','#51c34a'],
+                       ['#c1c34a','#c38a4a','#c34a4a','#c34a6f'],
+                       ['#000000','#666666','#bbbbbb','#ffffff']
+            ],
+            change: function(color) { tmp_upv_color = color.toHexString(); },
+            color: window.plugin.upcv.settings.upv_color,
+          });
+        $('#portal-visited-settings--color-captured').spectrum({
+            flat: false,
+            showInput: false,
+            showButtons: false,
+            showPalette: true,
+            showPaletteOnly: false,
+            showSelectionPalette: false,
+            palette: [ ['#a24ac3','#514ac3','#4aa8c3','#51c34a'],
+                       ['#c1c34a','#c38a4a','#c34a4a','#c34a6f'],
+                       ['#000000','#666666','#bbbbbb','#ffffff']
+            ],
+            change: function(color) { tmp_upc_color = color.toHexString(); },
+            color: window.plugin.upcv.settings.upc_color,
+          });
+        $('#portal-visited-settings--color-scouted').spectrum({
+            flat: false,
+            showInput: false,
+            showButtons: false,
+            showPalette: true,
+            showPaletteOnly: false,
+            showSelectionPalette: false,
+            palette: [ ['#a24ac3','#514ac3','#4aa8c3','#51c34a'],
+                       ['#c1c34a','#c38a4a','#c34a4a','#c34a6f'],
+                       ['#000000','#666666','#bbbbbb','#ffffff']
+            ],
+            change: function(color) { tmp_souted_color = color.toHexString(); },
+            color: window.plugin.upcv.settings.scouted_color,
+          });
+    }
+    ///////////////////////////////////////////////////////////////////////////////
 
     window.plugin.upcv.upcv = function(data) {
         var type = data.portal.options.ent[2][18];
         var portal_level = data.portal.options.data.level;
         if (portal_level == undefined) return;
-        if(type & 2){
-            data.portal.setStyle({fillColor: 'indigo', fillOpacity: 1 });
-        }else if(type & 1){
-            data.portal.setStyle({fillColor: 'aqua',fillOpacity: 1 });
+        if(type & UPC_FLAG){
+            data.portal.setStyle({fillColor: window.plugin.upcv.settings.upc_color, fillOpacity: 1 });
+        }else if(type & UPV_FLAG){
+            data.portal.setStyle({fillColor: window.plugin.upcv.settings.upv_color,fillOpacity: 1 });
         }
     }
     window.plugin.upcv.not_upcv = function(data) {
         var type = data.portal.options.ent[2][18];
         var portal_level = data.portal.options.data.level;
         if (portal_level == undefined) return;
-        if(type&2){
+        if(type&UPC_FLAG){
             return
         }
-        if(type&1){
-            data.portal.setStyle({fillColor: 'aqua',fillOpacity: 1 });
+        if(type&UPV_FLAG){
+            data.portal.setStyle({fillColor: window.plugin.upcv.settings.upv_color,fillOpacity: 1 });
         }
         else{
-            data.portal.setStyle({fillColor: 'indigo', fillOpacity: 1 });
+            data.portal.setStyle({fillColor: window.plugin.upcv.settings.upc_color, fillOpacity: 1 });
         }
 
     }
-    window.plugin.upcv.scoutd = function(data) {
+    window.plugin.upcv.scouted = function(data) {
         var type = data.portal.options.ent[2][18];
         var portal_level = data.portal.options.data.level;
         if (portal_level == undefined) return;
-        if(type & 4){
-            data.portal.setStyle({fillColor: 'yellow', fillOpacity: 1});
+        if(type & SCOUT_FLAG){
+            data.portal.setStyle({fillColor: window.plugin.upcv.settings.scouted_color, fillOpacity: 1});
         }
     }
-    window.plugin.upcv.not_scoutd = function(data) {
+    window.plugin.upcv.not_scouted = function(data) {
         var type = data.portal.options.ent[2][18];
         var portal_level = data.portal.options.data.level;
         if (portal_level == undefined) return;
-        if(!(type & 4)){
-            data.portal.setStyle({fillColor: 'yellow', fillOpacity: 1 });
+        if(!(type & SCOUT_FLAG)){
+            data.portal.setStyle({fillColor: SCOUT_COLOR, fillOpacity: 1 });
         }
     }
 
     var setup = function() {
-        window.plugin.upcv.createLayer();
+        try {
+            window.plugin.upcv.settings = JSON.parse(localStorage[KEY_SETTINGS]);
+        } catch (e) {
+            window.plugin.upcv.settings = {
+                drawMissing: false,
+                showVisited: true,
+                showScouted: false,
+                upv_color: UPV_COLOR,
+                upc_color: UPC_COLOR,
+                scouted_color: SCOUT_COLOR,
+            };
+        }
+        createIcons()
+        window.plugin.upcv.layerGroup = new L.LayerGroup();
+        window.addLayerGroup('Portal Visited', window.plugin.upcv.layerGroup, false);
+
+        window.addHook('portalAdded', window.plugin.upcv.addToPortalMap);
+        window.addHook('portalRemoved', window.plugin.upcv.removePortalFromMap);
+        window.map.on('zoom', drawAllFlags);
+        $('#toolbox').append('<a onclick="window.plugin.upcv.toggleDisplayMode()">Portal Visited</a>');
+
         window.addPortalHighlighter('Portal UPC/V', window.plugin.upcv.upcv);
         window.addPortalHighlighter('Portal not UPC/V', window.plugin.upcv.not_upcv);
-        window.addPortalHighlighter('Portal Scouted', window.plugin.upcv.scoutd);
-        window.addPortalHighlighter('Portal not Scouted', window.plugin.upcv.not_scoutd);
+        window.addPortalHighlighter('Portal Scouted', window.plugin.upcv.scouted);
+        window.addPortalHighlighter('Portal not Scouted', window.plugin.upcv.not_scouted);
     }
     // PLUGIN END //////////////////////////////////////////////////////////
     setup.info = plugin_info;
