@@ -2,7 +2,7 @@
 // @id                  iitc-plugin-portal-visited@takurua
 // @name                IITC plugin: Show portal visited
 // @category            Layer
-// @version             1.2.0
+// @version             1.2.1
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
@@ -19,7 +19,7 @@
 function wrapper(plugin_info) {
     if(typeof window.plugin !== 'function') window.plugin = function() {};
     plugin_info.buildName = 'iitc';
-    plugin_info.dateTimeVersion = '20210207.175700';
+    plugin_info.dateTimeVersion = '20210216.163800';
     plugin_info.pluginId = 'upcv';
 
     // PLUGIN START ////////////////////////////////////////////////////////
@@ -347,7 +347,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         var portal_level = data.portal.options.data.level;
         if (portal_level == undefined) return;
         if(!(type & SCOUT_FLAG)){
-            data.portal.setStyle({fillColor: SCOUT_COLOR, fillOpacity: 1 });
+            data.portal.setStyle({fillColor: window.plugin.upcv.settings.scouted_color, fillOpacity: 1 });
         }
     }
 
