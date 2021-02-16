@@ -4,8 +4,7 @@
 <img src="preview.png"/><br>
 
 四个highlighter：Portal UPC/V、Portal Scouted、 not UPC/V、Portal not Scouted<br>
-Portal UPC/V、Portal Scouted:<br>
 <img src="highlighter.png"/><br>
 
-可以通过右侧的portal visited打开配置框，选择图层中图示的显示方式以及颜色
+可以通过右侧的portal visited打开配置框，选择图层中图示的显示方式以及颜色,以及查看当前地图视野内获得upc/v、scout controller的统计情况
 <img src="color_customize.png">
