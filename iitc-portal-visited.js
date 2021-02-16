@@ -2,7 +2,7 @@
 // @id                  iitc-plugin-portal-visited@takurua
 // @name                IITC plugin: Show portal visited
 // @category            Layer
-// @version             1.2.1
+// @version             1.3.0
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
@@ -27,6 +27,7 @@ function wrapper(plugin_info) {
     const UPC_COLOR     = "indigo";
     const UPV_COLOR     = "aqua";
     const SCOUT_COLOR   = "orange";
+    const RADIUS = 50;
 
     const UPV_FLAG = 1;
     const UPC_FLAG = 2;
@@ -129,6 +130,34 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
             drawPortalFlags(window.portals[id]);
         }
     }
+    function count_portals_stat(){
+        var displayBounds = map.getBounds();
+        var upv = 0
+        var upc = 0
+        var scouted = 0
+        var total = 0
+
+        $.each(window.portals, function(i, portal) {
+            var type = portal.options.ent[2][18];
+            var visit_state = type&2?2:type&1
+            var scout_state = type&4
+
+            if(!displayBounds.contains(portal.getLatLng())) return true;
+            total++;
+            if(scout_state) scouted++;
+            switch (visit_state){
+                case 1 :
+                    upv++;
+                    break;
+                case 2 :
+                    upc++;
+                    break;
+                default:
+                    break;
+            }
+        });
+        return {"upv":upv, "upc":upc, "scouted":scouted, "total":total}
+    }
 
     function getSVGString(size, color, parts, offset) {
         const path = size * Math.PI/(2*parts);
@@ -136,6 +165,79 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         const arcOffset = path / parts * (parts - 1);
         const rotate = 180/parts+(parts-1)*135+offset*90;
         return `<svg width="${(size+4)}" height="${(size+4)}" xmlns="http://www.w3.org/2000/svg"><circle stroke="${color}" stroke-width="4" fill="transparent" cx="${(size+4)/2}" cy="${(size+4)/2}" r="${(size/2)}" stroke-dasharray="${path}, ${cap}" stroke-dashoffset="${arcOffset}" transform="rotate(${rotate}, ${((size+4)/2)}, ${((size+4)/2)})" /></svg>`;
+    }
+    function format(str) {
+      var re = /%s/;
+      for(var i = 1; i < arguments.length; i++) {
+        str = str.replace(re, arguments[i]);
+      }
+      return str;
+    }
+    function make_pie(startAngle, endAngle, color) {
+      if(startAngle == endAngle)
+        return $([]);
+
+      var large_arc = (endAngle - startAngle) > 0.5 ? 1 : 0;
+
+      var labelAngle = (endAngle + startAngle) / 2;
+      var label = Math.round((endAngle - startAngle) * 100) + '%';
+
+      startAngle = 0.5 - startAngle;
+      endAngle   = 0.5 - endAngle;
+      labelAngle = 0.5 - labelAngle;
+
+      var p1x = Math.sin(startAngle * 2 * Math.PI) * RADIUS;
+      var p1y = Math.cos(startAngle * 2 * Math.PI) * RADIUS;
+      var p2x = Math.sin(endAngle   * 2 * Math.PI) * RADIUS;
+      var p2y = Math.cos(endAngle   * 2 * Math.PI) * RADIUS;
+      var lx  = Math.sin(labelAngle * 2 * Math.PI) * RADIUS / 1.5;
+      var ly  = Math.cos(labelAngle * 2 * Math.PI) * RADIUS / 1.5;
+
+      // for a full circle, both coordinates would be identical, so no circle would be drawn
+      if(startAngle == 0.5 && endAngle == -0.5)
+        p2x -= 1E-5;
+
+      var text = $('<text>')
+        .attr({
+          'text-anchor': 'middle',
+          'dominant-baseline' :'central',
+          x: lx,
+          y: ly
+        })
+        .html(label);
+
+      var path = $('<path>')
+        .attr({
+          fill: color,
+          d: format('M %s,%s A %s,%s 0 %s 1 %s,%s L 0,0 z', p1x,p1y, RADIUS, RADIUS, large_arc, p2x,p2y)
+        });
+
+      return path.add(text); // concat path and text
+    };
+
+    function make_state_piesvg(portals_state) {
+        var svg = $('<svg width="260" height="120" id="portal-visited-pie">').css('margin-top', 10);
+        var g = $('<g>')
+          .attr('transform', format('translate(%s,%s)', 70, 50))
+          .appendTo(svg);
+        make_pie(0,                                      portals_state.upv/portals_state.total, window.plugin.upcv.settings.upv_color).appendTo(g);
+        make_pie(portals_state.upv/portals_state.total,  (portals_state.upv+portals_state.upc)/portals_state.total, window.plugin.upcv.settings.upc_color).appendTo(g);
+        make_pie((portals_state.upv+portals_state.upc)/portals_state.total, 1,                             COLORS[0]).appendTo(g);
+        $('<text fill="white">UPV/C</text>')
+            .attr('transform', format('translate(%s,%s)', -19, 65))
+            .appendTo(g)
+
+        g = $('<g>')
+          .attr('transform', format('translate(%s,%s)', 190, 50))
+          .appendTo(svg);
+        make_pie(0, portals_state.scouted/portals_state.total, window.plugin.upcv.settings.scouted_color).appendTo(g);
+        make_pie(portals_state.scouted/portals_state.total, 1, COLORS[0]).appendTo(g);
+        $('<text fill="white">Scouted</text>')
+            .attr('transform', format('translate(%s,%s)', -25, 65))
+            .appendTo(g)
+
+        var svg_html = $('<div>').append(svg).html()
+        return svg_html
     }
 
     function createIcons() {
@@ -185,31 +287,63 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
     }
 
     window.plugin.upcv.toggleDisplayMode = function () {
-        dialog({
-            html: `<div id="portal-visited-settings">
-<div>
-  <select id="portal-visited-settings--display-mode">
-    <option value="received" ${window.plugin.upcv.settings.drawMissing?'':'selected'}>Show uniques received</option>
-    <option value="missing" ${window.plugin.upcv.settings.drawMissing?'selected':''}>Show missing uniques</option>
-  </select>
-</div>
+        var portals_state = count_portals_stat()
 
-<div><input type="checkbox" id="portal-visited-settings--show-visited" ${window.plugin.upcv.settings.showVisited?'checked':''}><label> Show visited</label></div>
-<table>
-    <tr>
-        <td style="vertical-align: middle;">upv color: </td><td><div style ="display:inline-table" id="portal-visited-settings--color-visited"></div></td>
-        <td style="vertical-align: middle;">upc color: </td><td><div style ="display:inline-table" id="portal-visited-settings--color-captured"></div></td>
-    </tr>
-<table>
-<div><input type="checkbox" id="portal-visited-settings--show-scouted" ${window.plugin.upcv.settings.showScouted?'checked':''}><label> Show scouted</label></div>
-<table>
-    <tr>
-        <td style="vertical-align: middle;">scouted color: </td>
-        <td><div style ="display:inline-table" id="portal-visited-settings--color-scouted"></div></td>
-    </tr>
-<table>
-</div>`,
-            title: 'Portal Visited Settings',
+        var svg_html = make_state_piesvg(portals_state)
+        
+        var dialog_html =  `
+        <div id="portal-visited">
+            <table>
+                <th style="text-align:left; color:#ffce00">Uniques count in view</th>
+                <tr><td>Toral:</td><td>${portals_state.total}</td></tr>
+                <tr><td>UPV:</td><td>${portals_state.upv}</td></tr>
+                <tr><td>UPC:</td><td>${portals_state.upc}</td></tr>
+                <tr><td>Scouted:</td><td>${portals_state.scouted}</td></tr>
+            </table>
+            ${svg_html}
+            <br>            
+            <table>
+                <th style="text-align:left; color:#ffce00">Settings</th>
+                <tr>
+                    <td>
+                        <select id="portal-visited-settings--display-mode">
+                            <option value="received" ${window.plugin.upcv.settings.drawMissing?'':'selected'}>Show uniques received</option>
+                            <option value="missing" ${window.plugin.upcv.settings.drawMissing?'selected':''}>Show missing uniques</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox" id="portal-visited-settings--show-visited" ${window.plugin.upcv.settings.showVisited?'checked':''}><label> Show visited</label></td>
+                </tr>
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td style="vertical-align: middle;">upv color: </td><td><div style ="display:inline-table" id="portal-visited-settings--color-visited"></div></td>
+                                <td style="vertical-align: middle;">upc color: </td><td><div style ="display:inline-table" id="portal-visited-settings--color-captured"></div></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox" id="portal-visited-settings--show-scouted" ${window.plugin.upcv.settings.showScouted?'checked':''}><label> Show scouted</label></td>
+                </tr>
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td style="vertical-align: middle;">scouted color: </td>
+                                <td><div style ="display:inline-table" id="portal-visited-settings--color-scouted"></div></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+`
+        dialog({
+            html: dialog_html,
+            title: 'Portal Visited',
             id: 'plugin-portal-visited',
             width: '300px',
             closeCallback: function () {
@@ -262,6 +396,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
             },
             onConfirm:function(color){
                 window.plugin.upcv.settings.upv_color = color.color.hex;
+                $("#portal-visited-pie")[0].outerHTML = make_state_piesvg(portals_state)
             }
         })
         var upc_pallete = new XNColorPicker({
@@ -283,6 +418,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
             },
             onConfirm:function(color){
                 window.plugin.upcv.settings.upc_color = color.color.hex;
+                $("#portal-visited-pie")[0].outerHTML = make_state_piesvg(portals_state)
             }
         })
         var scouted_pallete = new XNColorPicker({
@@ -304,6 +440,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
             },
             onConfirm:function(color){
                 window.plugin.upcv.settings.scouted_color = color.color.hex;
+                $("#portal-visited-pie")[0].outerHTML = make_state_piesvg(portals_state)
             }
         })
     }
