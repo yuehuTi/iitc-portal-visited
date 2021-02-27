@@ -32,7 +32,7 @@ function wrapper(plugin_info) {
     const UPV_FLAG = 1;
     const UPC_FLAG = 2;
     const SCOUT_FLAG = 4;
-    
+
     window.plugin.upcv = function() {};
     window.plugin.upcv.layerGroup = {};
 
@@ -173,29 +173,12 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
       }
       return str;
     }
-    function make_pie(startAngle, endAngle, color) {
-      if(startAngle == endAngle)
-        return $([]);
-
-      var large_arc = (endAngle - startAngle) > 0.5 ? 1 : 0;
-
+    function make_pie_label(startAngle, endAngle, color){
       var labelAngle = (endAngle + startAngle) / 2;
       var label = Math.round((endAngle - startAngle) * 100) + '%';
-
-      startAngle = 0.5 - startAngle;
-      endAngle   = 0.5 - endAngle;
       labelAngle = 0.5 - labelAngle;
-
-      var p1x = Math.sin(startAngle * 2 * Math.PI) * RADIUS;
-      var p1y = Math.cos(startAngle * 2 * Math.PI) * RADIUS;
-      var p2x = Math.sin(endAngle   * 2 * Math.PI) * RADIUS;
-      var p2y = Math.cos(endAngle   * 2 * Math.PI) * RADIUS;
       var lx  = Math.sin(labelAngle * 2 * Math.PI) * RADIUS / 1.5;
       var ly  = Math.cos(labelAngle * 2 * Math.PI) * RADIUS / 1.5;
-
-      // for a full circle, both coordinates would be identical, so no circle would be drawn
-      if(startAngle == 0.5 && endAngle == -0.5)
-        p2x -= 1E-5;
 
       var text = $('<text>')
         .attr({
@@ -205,6 +188,23 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
           y: ly
         })
         .html(label);
+      return text;
+    }
+    function make_pie(startAngle, endAngle, color) {
+      if(startAngle == endAngle)
+        return $([]);
+      var large_arc = (endAngle - startAngle) > 0.5 ? 1 : 0;
+      startAngle = 0.5 - startAngle;
+      endAngle   = 0.5 - endAngle;      
+
+      var p1x = Math.sin(startAngle * 2 * Math.PI) * RADIUS;
+      var p1y = Math.cos(startAngle * 2 * Math.PI) * RADIUS;
+      var p2x = Math.sin(endAngle   * 2 * Math.PI) * RADIUS;
+      var p2y = Math.cos(endAngle   * 2 * Math.PI) * RADIUS;      
+
+      // for a full circle, both coordinates would be identical, so no circle would be drawn
+      if(startAngle == 0.5 && endAngle == -0.5)
+        p2x -= 1E-5;      
 
       var path = $('<path>')
         .attr({
@@ -212,17 +212,38 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
           d: format('M %s,%s A %s,%s 0 %s 1 %s,%s L 0,0 z', p1x,p1y, RADIUS, RADIUS, large_arc, p2x,p2y)
         });
 
-      return path.add(text); // concat path and text
+      return path; // concat path and text
     };
+    function make_pie_graph(datas, svg){
+      var last_data = 0;
+      for (var i = 0; i < datas.length; i++) {
+        startAngle = last_data;
+        endAngle = last_data+datas[i].data;
+        color = datas[i].color;
+        make_pie(startAngle, endAngle, color).appendTo(svg);
+        last_data = endAngle;
+      }
+      last_data = 0
+      for (i = 0; i < datas.length; i++) {
+        startAngle = last_data;
+        endAngle = last_data+datas[i].data;
+        color = datas[i].color;
+        make_pie_label(startAngle, endAngle, color).appendTo(svg);
+        last_data = endAngle;
+      }
+    }
 
     function make_state_piesvg(portals_state) {
         var svg = $('<svg width="260" height="120" id="portal-visited-pie">').css('margin-top', 10);
         var g = $('<g>')
           .attr('transform', format('translate(%s,%s)', 70, 50))
           .appendTo(svg);
-        make_pie(0,                                      portals_state.upv/portals_state.total, window.plugin.upcv.settings.upv_color).appendTo(g);
-        make_pie(portals_state.upv/portals_state.total,  (portals_state.upv+portals_state.upc)/portals_state.total, window.plugin.upcv.settings.upc_color).appendTo(g);
-        make_pie((portals_state.upv+portals_state.upc)/portals_state.total, 1,                             COLORS[0]).appendTo(g);
+        var datas = [
+          {"data":portals_state.upv/portals_state.total, "color":window.plugin.upcv.settings.upv_color},
+          {"data":portals_state.upc/portals_state.total, "color":window.plugin.upcv.settings.upc_color},
+          {"data":1-(portals_state.upv+portals_state.upc)/portals_state.total, "color":COLORS[0]},
+        ]
+        make_pie_graph(datas, g)
         $('<text fill="white">UPV/C</text>')
             .attr('transform', format('translate(%s,%s)', -19, 65))
             .appendTo(g)
@@ -230,8 +251,11 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         g = $('<g>')
           .attr('transform', format('translate(%s,%s)', 190, 50))
           .appendTo(svg);
-        make_pie(0, portals_state.scouted/portals_state.total, window.plugin.upcv.settings.scouted_color).appendTo(g);
-        make_pie(portals_state.scouted/portals_state.total, 1, COLORS[0]).appendTo(g);
+        datas = [
+          {"data":portals_state.scouted/portals_state.total, "color":window.plugin.upcv.settings.scouted_color},
+          {"data":1-(portals_state.scouted)/portals_state.total, "color":COLORS[0]},
+        ]
+        make_pie_graph(datas, g)
         $('<text fill="white">Scouted</text>')
             .attr('transform', format('translate(%s,%s)', -25, 65))
             .appendTo(g)
@@ -290,7 +314,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         var portals_state = count_portals_stat()
 
         var svg_html = make_state_piesvg(portals_state)
-        
+
         var dialog_html =  `
         <div id="portal-visited">
             <table>
@@ -301,7 +325,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
                 <tr><td>Scouted:</td><td>${portals_state.scouted}</td></tr>
             </table>
             ${svg_html}
-            <br>            
+            <br>
             <table>
                 <th style="text-align:left; color:#ffce00">Settings</th>
                 <tr>
