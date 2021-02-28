@@ -335,8 +335,8 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
                 </tr>
                 <tr>
                     <td>
-                        <label><input name="portal-visited-settings--display-mode" id="portal-visited-settings-display-recived" style="vertical-align: text-bottom;" type="radio" value="recived"  ${window.plugin.upcv.settings.drawMissing?'':'checked'}/>recived</label> 
-                        <label><input name="portal-visited-settings--display-mode" id="portal-visited-settings-display-missing" style="vertical-align: text-bottom;" type="radio" value="missing"  ${window.plugin.upcv.settings.drawMissing?'checked':''}/>missing</label> 
+                        <label><input name="portal-visited-settings--display-mode" id="portal-visited-settings-display-recived" style="vertical-align: text-bottom;outline:none;" type="radio" value="recived"  ${window.plugin.upcv.settings.drawMissing?'':'checked'}/>recived</label> 
+                        <label><input name="portal-visited-settings--display-mode" id="portal-visited-settings-display-missing" style="vertical-align: text-bottom;outline:none;" type="radio" value="missing"  ${window.plugin.upcv.settings.drawMissing?'checked':''}/>missing</label> 
                     </td>
                 </tr>
                 <tr>
