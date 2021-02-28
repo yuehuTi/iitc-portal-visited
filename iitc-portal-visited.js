@@ -2,7 +2,7 @@
 // @id                  iitc-plugin-portal-visited@takurua
 // @name                IITC plugin: Show portal visited
 // @category            Layer Highlighter
-// @version             1.3.1
+// @version             1.3.2
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
@@ -19,7 +19,7 @@
 function wrapper(plugin_info) {
     if(typeof window.plugin !== 'function') window.plugin = function() {};
     plugin_info.buildName = 'iitc';
-    plugin_info.dateTimeVersion = '20210227.190200';
+    plugin_info.dateTimeVersion = '20210228.160200';
     plugin_info.pluginId = 'upcv';
 
     // PLUGIN START ////////////////////////////////////////////////////////
@@ -325,16 +325,24 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
                 <tr><td>Scouted:</td><td>${portals_state.scouted}</td></tr>
             </table>
             ${svg_html}
-            <br>
+            <hr>
             <table>
                 <th style="text-align:left; color:#ffce00">Settings</th>
                 <tr>
+                  <td>
+                    <label>Dispaly mode:</label>
+                  </td>
+                </tr>
+                <tr>
                     <td>
-                        <select id="portal-visited-settings--display-mode">
-                            <option value="received" ${window.plugin.upcv.settings.drawMissing?'':'selected'}>Show uniques received</option>
-                            <option value="missing" ${window.plugin.upcv.settings.drawMissing?'selected':''}>Show missing uniques</option>
-                        </select>
+                        <label><input name="portal-visited-settings--display-mode" id="portal-visited-settings-display-recived" type="radio" value="recived"  ${window.plugin.upcv.settings.drawMissing?'':'checked'}/>recived</label> 
+                        <label><input name="portal-visited-settings--display-mode" id="portal-visited-settings-display-missing" type="radio" value="missing"  ${window.plugin.upcv.settings.drawMissing?'checked':''}/>missing</label> 
                     </td>
+                </tr>
+                <tr>
+                  <td>
+                    <label>Dispaly item:</label>
+                  </td>
                 </tr>
                 <tr>
                     <td><input type="checkbox" id="portal-visited-settings--show-visited" ${window.plugin.upcv.settings.showVisited?'checked':''}><label> Show visited</label></td>
@@ -371,11 +379,11 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
             id: 'plugin-portal-visited',
             width: '300px',
             closeCallback: function () {
-                const elMode = document.getElementById('portal-visited-settings--display-mode');
+                const elMode = document.getElementById('portal-visited-settings-display-missing');
                 const elVisited = document.getElementById('portal-visited-settings--show-visited');
                 const elScouted = document.getElementById('portal-visited-settings--show-scouted');
 
-                window.plugin.upcv.settings.drawMissing = elMode.value === 'missing';
+                window.plugin.upcv.settings.drawMissing = elMode.checked;
                 window.plugin.upcv.settings.showVisited = elVisited.checked;
                 window.plugin.upcv.settings.showScouted = elScouted.checked;
 
