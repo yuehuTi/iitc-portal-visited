@@ -2,7 +2,7 @@
 // @id                  iitc-plugin-portal-visited@takurua
 // @name                IITC plugin: Show portal visited
 // @category            Layer Highlighter
-// @version             1.3.2
+// @version             1.3.3
 // @namespace           https://github.com/yuehuTi/iitc-portal-visited
 // @downloadURL         https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
 // @updateURL           https://raw.githubusercontent.com/yuehuTi/iitc-portal-visited/main/iitc-portal-visited.js
@@ -19,7 +19,7 @@
 function wrapper(plugin_info) {
     if(typeof window.plugin !== 'function') window.plugin = function() {};
     plugin_info.buildName = 'iitc';
-    plugin_info.dateTimeVersion = '20210228.160200';
+    plugin_info.dateTimeVersion = '20260807.105300';
     plugin_info.pluginId = 'upcv';
 
     // PLUGIN START ////////////////////////////////////////////////////////
@@ -80,56 +80,154 @@ var n="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(r){re
 function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagName("head")[0],e=document.createElement("link");e.type="text/css",e.rel="stylesheet",e.href=n,t.appendChild(e)}}(["//at.alicdn.com/t/font_2330183_hjqs7adohe.css"]),e=window,s=XNQuery,o={color:"#ffffff",selector:"",showprecolor:!0,prevcolors:["#EF534F","#BA69C8","#FFD54F","#81C784","#7FDEEA","#90CAF9","#F44436","#AB47BC","#FFC106","#66BB6A","#25C6DA","#4EC3F7","#E53934","#9D27B0","#FFA726","#4CAF50","#00ACC1","#29B6F6","#D32E30","#8F24AA","#FB8C01","#378E3C","#0097A7","#02AAF4","#C62928","#7B1FA2","#F57C02","#2F7D31","#00838F","#029BE5","#B71B1C","#6A1B9A","#EF6C00","#34691D","#006164","#0388D1","#980A0B","#4A148C","#E65100","#1A5E20","#004D41","#01579B","#00000000","#FFFFFF","#DBDBDB","#979797","#606060","#000000"],showhistorycolor:!0,historycolornum:16,format:"rgba",showPalette:!0,show:!1,alwaysShow:!1,lang:"cn",colorTypeOption:"single,linear-gradient,radial-gradient",canMove:!0,autoConfirm:!1},i.prototype={getRandomString:function(r){r=r||8;for(var o="ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz",n=o.length,t="",e=0;e<r;e++)t+=o.charAt(Math.floor(Math.random()*n));return t},initCurrentColorBox:function(){var o=this;this.curcolordom=document.createElement("div"),this.curcolordom.classList.add("fcolorpicker-curbox"),this.curcolordom.style.background=this.option.color,this.$el.empty().append(this.curcolordom),this.curcolordom.onclick=function(r){o.changeShow()},this.option.show&&(o.init(),s(o.dom).show())},changeShow:function(r){this.dom&&"block"==s(this.dom).css("display")||r?this.option.alwaysShow||(s(this.dom).remove(),this.dom=null,this.moved=!1,this.show=!1):(this.init(),s(this.dom).show(),this.show=!0,this.setPosition())},init:function(){this.initDom(),this.initColorFormat(),this.option.showPalette?(this.initPalette(),this.initColorBand(),this.initOpacity()):this.dom.querySelector(".color-palette").style.display="none",this.setPrevColors(),this.getHistoryColors(),this.setPosition(),this.changeColorFormatType(!0),s(this.dom).hide()},initDom:function(){var r=!0,o=document.body.querySelector(".fcolorpicker#"+this.id);o||((o=document.createElement("div")).classList.add("fcolorpicker"),this.option.canMove&&o.classList.add("canmove"),o.id=this.id,r=!1);for(var n="",t=0;t<this.option.colorTypeOption.length;t++){var e=this.option.colorTypeOption[t];n+='<li class="color-type-item" data-type="'+e+'">'+this.colorTypeList[this.option.lang][e]+"</li>"}var i='\n            <div class="color-type color-slidedown iconfontcolorpicker iconcolorpickerxiala">\n               <p class="color-slidedown-curbox"></p>\n               <ul>\n                   '+n+'\n               </ul>\n            </div>\n            <div class="color-gradient">\n                <div class="gradient-bar-container">\n                    <div class="gradient-colors">\n                        <div class="gradient-item iconfontcolorpicker iconcolorpicker1" style="left:10%">\n                            <div class="color"></div>\n                        </div>\n                        <div class="gradient-item iconfontcolorpicker iconcolorpicker1" style="left:20%">\n                            <div class="color"></div>\n                        </div>\n                    </div>\n                    <div class="gradient-bar">\n                        <span></span>\n                    </div>\n                    <a class="add-gradient iconfontcolorpicker iconcolorpicker11"></a>\n                </div>\n                <div class="gradient-angle">\n                    <div class="current-angle">\n                      <div class="angle-bar"></div>\n                      <span>30°</span>\n</div>\n</div>\n            </div>\n            <div class="color-palette">\n                <div class="lightness">\n                    <div class="lightbar"></div>\n                </div>\n                <div class="hue">\n                    <div class="huebar"></div>\n                </div>\n                <div class="opacity">\n                    <div class="opacitybar"></div>\n                </div>\n            </div>\n            \x3c!--            <p>最近使用</p>--\x3e\n            <div class="color-latest fcolor-list">\n            </div>\n\x3c!--            <p>预置颜色</p>--\x3e\n            <div class="color-recommend fcolor-list">\n            </div>\n\n            <div class="color-btns">\n                <div class="color-preview">\n                    <div class="color-format-type color-slidedown iconfontcolorpicker iconcolorpickerxiala">\n                       <p class="color-slidedown-curbox">RGBA</p>\n                       <ul>\n                        <li class="color-format-type-item" data-type="rgba">RGBA</li>\n                        <li class="color-format-type-item" data-type="hex">HEX</li>\n                        <li class="color-format-type-item" data-type="hsla">HSLA</li>\n                       </ul>\n                    </div>\n                    <div class="current-color"></div>\n                    <div class="current-color-value">\n                        <input type="text" onfocus="this.select()">\n                    </div>\n                </div>\n                \n                <div class="color-btn-group">\n                    <a class="cancel-color">'+this.btns[this.option.lang][0]+'</a>\n                    <a class="confirm-color">'+this.btns[this.option.lang][1]+"</a>\n                </div>\n            </div>";o.innerHTML=i,this.dom=o,document.body.appendChild(this.dom),this.canvasSize={width:212,height:129},this.lightbar=this.dom.querySelector(".lightbar"),this.huebar=this.dom.querySelector(".huebar"),this.opacitybar=this.dom.querySelector(".opacitybar"),this.option.showprecolor||s(this.dom).find(".color-recommend").hide(),this.option.showhistorycolor||s(this.dom).find(".color-latest").hide(),this.option.colorTypeOption.length<2&&s(this.dom).find(".color-type").remove(),this.setPosition(),r||this.addEvent(),this.addBlurEvent()},addPosEvent:function(){var r=this;e.addEventListener("scroll",function(){r.setPosition()}),e.addEventListener("resize",function(){r.setPosition()})},moveDom:function(r,o){var n;this.dom&&(this.moved=!0,n=o.clientX-r.x+this.pos.left,r=o.clientY-r.y+this.pos.top,this.dom.style.top=r+"px",this.dom.style.left=n+"px")},setPosition:function(){var r,o,n,t,e,i,l;this.dom&&!this.moved&&this.show&&(r=document.documentElement.clientWidth,o=document.documentElement.clientHeight,t=(n=this.$el.get(0).querySelector("div")).getBoundingClientRect().top,l=n.getBoundingClientRect().left,e=s(this.dom).outerWidth(),i=s(this.dom).outerHeight(),l=r-l<=e?l-e-10:l+10+n.offsetWidth,(t=o-t<i?t-i-n.offsetHeight:t)<10&&(t=10),this.dom.style.top=t+"px",this.dom.style.left=l+"px",this.pos={left:l,top:t})},addHistoryColors:function(){var r=this.color[this.currentColorFormat];this.hiscolors||(this.hiscolors=[]);for(var o=0;o<this.hiscolors.length;o++)if((0,t.default)({color:this.hiscolors[o],format:this.currentColorFormat}).complete==r){this.hiscolors.splice(o,1);break}this.hiscolors.unshift(r),e.localStorage.setItem("fcolorpicker",this.hiscolors.join(";")),this.rendHisColors(),this.setPosition()},getHistoryColors:function(){var r=e.localStorage.getItem("fcolorpicker");this.hiscolors=(r||"").split(";"),this.rendHisColors()},clearHistoryColors:function(){this.hiscolors=[],e.localStorage.setItem("fcolorpicker",this.hiscolors.join(";")),this.rendHisColors(),this.setPosition()},rendHisColors:function(){if(this.option.showhistorycolor){s(this.dom).find(".color-latest").empty();for(var r,o=0;o<(this.option.historycolornum<0?this.hiscolors.length:this.option.historycolornum);o++)this.hiscolors[o]&&""!=this.hiscolors[o]&&(r='\n                    <div class="color-item" data-color="'+this.hiscolors[o]+'">\n                    <span style="background:'+this.hiscolors[o]+'"></span>\n</div>\n                ',s(this.dom).find(".color-latest").append(r))}},setPrevColors:function(){if(this.option.showprecolor)for(var r=0;r<this.option.prevcolors.length;r++){var o='\n                    <div class="color-item" data-color="'+this.option.prevcolors[r]+'">\n                    <span style="background:'+this.option.prevcolors[r]+'"></span>\n</div>\n                ';s(this.dom).find(".color-recommend").append(o)}},addBlurEvent:function(){var o=this;this.dom.querySelector("input").onblur=function(r){o.setColor(o.dom.querySelector(".current-color-value input").value)}},cancleFun:function(){this.initColorFormat(this.lastColor,!0);var r={colorType:this.currentColorType};"single"==this.currentColorType?(r.color=this.color,this.lastColor=this.color.rgba):(r.color=this.gradientColor,this.lastColor=this.gradientColor.str),this.changeCurColorDom(),this.option.onCancel(r),this.changeShow(!0)},getCurrentColor:function(r){this.initColorFormat(this.dom.querySelector(".current-color-value input").value,!0),this.addHistoryColors();var o={colorType:this.currentColorType};return"single"==this.currentColorType?(o.color=this.color,r&&(this.lastColor=this.color.rgba)):(o.color=this.gradientColor,r&&(this.lastColor=this.gradientColor.str)),this.changeCurColorDom(),o},addEvent:function(){var t=this,e=null,i=this,l={top:0,left:0,bartop:0,isGradientBar:!1,$ele:null};i.dom.addEventListener("mousedown",function(r){var o,n=s(r.target);e=null,0<n.parents(".lightness").length()&&(e="lightness"),0<n.parents(".hue").length()&&(e="hue",o=100*r.offsetY/i.canvasSize.height,i.huebar.style.top=o.toFixed(2)+"%",l.bartop=parseFloat(i.huebar.style.top)),0<n.parents(".opacity").length()&&(e="opacity",o=100*r.offsetY/i.canvasSize.height,i.opacitybar.style.top=o.toFixed(2)+"%",l.bartop=parseFloat(i.opacitybar.style.top)),l.x=r.clientX,l.y=r.clientY,e&&i.changeColor(e,r,null),(n=n.parents(".gradient-item").get(0)?n.parents(".gradient-item"):n).hasClass("gradient-item")&&(l.isGradientBar=!0,t.gradientIndex=n.index(),t.updateGradientBar(),t.setCurrentGradientColor(),l.$ele=n),n.hasClass("add-gradient")&&(t.gradientColor.arry.colors.push({per:100,color:"#ffffff"}),t.gradientColor=t.revertGradientToString(t.gradientColor.arry),t.gradientIndex=t.gradientColor.arry.colors.length-1,t.rendInputValue(),t.rendGradientColors(),t.updateGradientBar()),n.hasClass("angle-bar")&&(l.isGradientBar=!1,l.isAngleBar=!0),n.get(0)==t.dom&&t.option.canMove?l.isMove=!0:l.isMove=!1}),document.addEventListener("mousemove",function(r){var o;e?i.changeColor(e,r,l):l.isGradientBar?(o=(100*(r.clientX-s(t.dom).find(".gradient-colors").get(0).getBoundingClientRect().left)/s(t.dom).find(".gradient-colors").get(0).getBoundingClientRect().width).toFixed(1),t.gradientColor.arry.colors.length<3?(o=100<o?100:o)<0&&(o=0):-5<=(o=100<o&&o<=105?100:o)&&o<0&&(o=0),t.gradientColor.arry.colors[t.gradientIndex].per=o,l.$ele.css({left:o+"%"}),t.updateGradientColors(!0),t.changeCurColorDom(),o<-5||105<o?l.$ele.addClass("deleting-item"):l.$ele.removeClass("deleting-item")):l.isAngleBar&&(360<(o=(o=(360*(r.clientX-s(t.dom).find(".gradient-angle").get(0).getBoundingClientRect().left)/s(t.dom).find(".gradient-angle").get(0).getBoundingClientRect().width).toFixed(1))<0?0:o)&&(o=360),t.gradientColor.arry.angle=o,t.updateAngleBar(),t.updateGradientColors(),t.changeCurColorDom()),l.isMove&&t.moveDom(l,r)}),document.addEventListener("mouseup",function(r){var o;l.isGradientBar&&(o=(100*(r.clientX-s(t.dom).find(".gradient-colors").get(0).getBoundingClientRect().left)/s(t.dom).find(".gradient-colors").get(0).getBoundingClientRect().width).toFixed(1),2<t.gradientColor.arry.colors.length&&(105<o||o<-5)&&(t.gradientColor.arry.colors.splice(t.gradientIndex,1),l.$ele.remove(),t.updateGradientBar(),t.gradientColor=t.revertGradientToString(t.gradientColor.arry),t.rendInputValue()),o=i.getCurrentColor(t.option.autoConfirm),i.option.onChange(o),t.option.autoConfirm&&t.option.onConfirm(o)),(e||l.isAngleBar)&&(o=i.getCurrentColor(t.option.autoConfirm),i.option.onChange(o),t.option.autoConfirm&&t.option.onConfirm(o)),e=null,l.isGradientBar=!1,l.isAngleBar=!1,l.isMove&&(o=r.clientX-l.x+t.pos.left,r=r.clientY-l.y+t.pos.top,t.pos.left=o,t.pos.top=r),l.isMove=!1}),this.dom.addEventListener("click",function(r){r.stopPropagation();var o,r=s(r.target);if(r.hasClass("color-item")){i.getColorFormat(r.attr("data-color")),i.fillOpacity(),i.fillPalette(),i.addHistoryColors(),"single"!=t.currentColorType&&(t.updateGradientColors(),t.changeCurColorDom());var n=i.getCurrentColor(t.option.autoConfirm);return i.option.onChange(n),void(t.option.autoConfirm&&t.option.onConfirm(n))}if(r.hasClass("cancel-color")&&t.cancleFun(),r.hasClass("confirm-color")){n=i.getCurrentColor(!0);return i.option.onConfirm(n),void i.changeShow(!0)}(r=r.hasClass("color-slidedown-curbox")?r.parent():r).hasClass("color-slidedown")&&(r.hasClass("down")?r.removeClass("down"):r.addClass("down")),r.hasClass("color-type-item")&&(r.hasClass("on")?r.parents(".color-slidedown").removeClass("down"):(o=r.attr("data-type"),t.currentColorType=o,t.changeColorType())),r.hasClass("color-format-type-item")&&(r.hasClass("on")?r.parents(".color-slidedown").removeClass("down"):(o=r.attr("data-type"),t.currentColorFormat=o,t.changeColorFormatType()))});function r(r){r.stopPropagation(),i.dom&&r.target!=i.dom&&s(r.target).parents(".fcolorpicker").get(0)!=i.dom&&s(r.target).get(0)!=i.curcolordom&&"block"==s(i.dom).css("display")&&i.cancleFun(),s(t.dom).find(".color-slidedown").not(s(r.target).parents(".color-slidedown").get(0)).removeClass("down")}this.removeMouseDownEvent=function(){document.removeEventListener("mousedown",r)},document.addEventListener("mousedown",r)},changeColor:function(r,o,n){if(r){var t=o.offsetX,e=o.offsetY;if(n){var i=100*(o.clientY-n.y)/this.canvasSize.height+n.bartop;if(99.9<i&&"lightness"!=r)return;i<0&&(i=0)}else i=(100*o.offsetY/this.canvasSize.height).toFixed(2);switch(r){case"hue":this.huebar.style.top=i+"%",c="hsla("+360*i/100+","+this.color.hslav[1]+"%,"+this.color.hslav[2]+"%,"+this.color.hslav[3]+")";break;case"lightness":t=o.clientX-this.dom.querySelector(".lightness").getBoundingClientRect().left;(e=o.clientY-this.dom.querySelector(".lightness").getBoundingClientRect().top)<0&&(e=0),(t=t<0?0:t)>this.dom.querySelector(".lightness canvas").getBoundingClientRect().width&&(t=this.dom.querySelector(".lightness canvas").getBoundingClientRect().width),e>this.dom.querySelector(".lightness canvas").getBoundingClientRect().height&&(e=this.dom.querySelector(".lightness canvas").getBoundingClientRect().height);var l=this.color.hslav[0],s=t/this.canvasSize.width*100,a=100-e/this.canvasSize.height*100,a=this.HSBToRGB({h:l,s:s,b:a}),c="rgba("+a.r+","+a.g+","+a.b+","+this.color.rgbav[3]+")";this.lightbar.style.top=e+"px",this.lightbar.style.left=t+"px";break;case"opacity":i=99.2<i?100:i,this.opacitybar.style.top=i+"%",c="rgba("+this.color.rgbav[0]+","+this.color.rgbav[1]+","+this.color.rgbav[2]+","+((100-i)/100).toFixed(2)+")"}this.getColorFormat(c),"hue"==r&&(this.fillOpacity(),this.fillPalette()),this.setPosition(),"single"!=this.currentColorType&&this.updateGradientColors(),this.changeCurColorDom()}},HSBToRGB:function(r){var o={},n=r.h,t=255*r.s/100,e=255*r.b/100;return 0==t?o.r=o.g=o.b=e:(e=n%60*((r=e)-(t=(255-t)*e/255))/60,(n=360==n?0:n)<60?(o.r=r,o.b=t,o.g=t+e):n<120?(o.g=r,o.b=t,o.r=r-e):n<180?(o.g=r,o.r=t,o.b=t+e):n<240?(o.b=r,o.r=t,o.g=r-e):n<300?(o.b=r,o.g=t,o.r=t+e):n<360?(o.r=r,o.g=t,o.b=r-e):(o.r=0,o.g=0,o.b=0)),{r:Math.round(o.r),g:Math.round(o.g),b:Math.round(o.b)}},updateGradientColors:function(r){this.gradientColor.arry.colors[this.gradientIndex].color=this.color.rgba,this.updateGradientBar(),this.updateGradientColorItem(this.gradientIndex,this.color.rgba),this.gradientColor=this.revertGradientToString(this.gradientColor.arry),this.rendInputValue(),r||this.rendGradientColors()},rendInputValue:function(){this.dom&&this.dom.querySelector(".current-color")&&("single"!=this.currentColorType?(this.dom.querySelector(".current-color").style.background=this.gradientColor.str,this.dom.querySelector(".current-color-value input").value=this.gradientColor.str):(this.dom.querySelector(".current-color").style.background=this.color[this.currentColorFormat],this.dom.querySelector(".current-color-value input").value=this.color[this.currentColorFormat]))},initColorBand:function(){var r=document.createElement("canvas");this.ctxhue=r.getContext("2d"),r.width=10,r.height=this.canvasSize.height,this.dom.querySelector(".color-palette .hue").appendChild(r),this.ctxhue.rect(0,0,10,this.canvasSize.height);r=this.ctxhue.createLinearGradient(0,0,0,this.canvasSize.height);r.addColorStop(0,"rgba(255, 0, 0, 1)"),r.addColorStop(.17,"rgba(255, 255, 0, 1)"),r.addColorStop(.34,"rgba(0, 255, 0, 1)"),r.addColorStop(.51,"rgba(0, 255, 255, 1)"),r.addColorStop(.68,"rgba(0, 0, 255, 1)"),r.addColorStop(.85,"rgba(255, 0, 255, 1)"),r.addColorStop(1,"rgba(255, 0, 0, 1)"),this.ctxhue.fillStyle=r,this.ctxhue.fill()},initOpacity:function(){var r=document.createElement("canvas");this.ctxopacity=r.getContext("2d"),r.width=10,r.height=this.canvasSize.height,this.dom.querySelector(".color-palette .opacity").appendChild(r),this.fillOpacity()},fillOpacity:function(){var r;this.ctxopacity&&(this.ctxopacity.clearRect(0,0,10,this.canvasSize.height),(r=this.ctxlightness.createLinearGradient(0,0,10,this.canvasSize.height)).addColorStop(0,"rgba("+this.color.rgbav[0]+","+this.color.rgbav[1]+","+this.color.rgbav[2]+",1)"),r.addColorStop(1,"rgba("+this.color.rgbav[0]+","+this.color.rgbav[1]+","+this.color.rgbav[2]+",0)"),this.ctxopacity.fillStyle=r,this.ctxopacity.fillRect(0,0,10,this.canvasSize.height))},initPalette:function(){this.canvas=document.createElement("canvas"),this.ctxlightness=this.canvas.getContext("2d"),this.canvas.width=this.canvasSize.width,this.canvas.height=this.canvasSize.height,this.dom.querySelector(".color-palette .lightness").appendChild(this.canvas),this.fillPalette()},fillPalette:function(){var r,o,n;this.ctxlightness&&(this.ctxlightness.fillStyle="hsla("+this.color.hslav[0]+",100%,50%,1)",r=this.canvasSize.width,o=this.canvasSize.height,this.ctxlightness.fillRect(0,0,r,o),(n=this.ctxlightness.createLinearGradient(0,0,r,0)).addColorStop(0,"rgba(255,255,255,1)"),n.addColorStop(1,"rgba(255,255,255,0)"),this.ctxlightness.fillStyle=n,this.ctxlightness.fillRect(0,0,r,o),(n=this.ctxlightness.createLinearGradient(0,0,0,o)).addColorStop(0,"rgba(0,0,0,0)"),n.addColorStop(1,"rgba(0,0,0,1)"),this.ctxlightness.fillStyle=n,this.ctxlightness.fillRect(0,0,r,o),this.updatelightbar())},updatelightbar:function(){var r,o;this.dom&&(this.lightbar=this.dom.querySelector(".lightbar"),this.lightbar&&(r=(o=this.RGBToHSB({r:this.color.rgbav[0],g:this.color.rgbav[1],b:this.color.rgbav[2]})).s*this.canvasSize.width/100,o=(100-o.b)*this.canvasSize.height/100,this.lightbar.style.top=o+"px",this.lightbar.style.left=r+"px"))},RGBToHSB:function(r){var o={h:0,s:0,b:0},n=Math.min(r.r,r.g,r.b),t=Math.max(r.r,r.g,r.b),e=t-n;return o.b=t,o.s=0!=t?255*e/t:0,0!=o.s?r.r==t?o.h=(r.g-r.b)/e:r.g==t?o.h=2+(r.b-r.r)/e:o.h=4+(r.r-r.g)/e:o.h=-1,t==n&&(o.h=0),o.h*=60,o.h<0&&(o.h+=360),o.s*=100/255,o.b*=100/255,o},setColor:function(r){this.initColorFormat(r),this.fillOpacity(),this.fillPalette(),this.addHistoryColors(),this.changeCurColorDom(),this.lastColor=r},getColor:function(r){return this.color},initColorFormat:function(r,o){"object"==(void 0===(r=r||this.lastColor)?"undefined":n(r))?(this.gradientColor=this.revertGradientToString(r),-1<this.gradientColor.str.indexOf("linear-gradient")?this.currentColorType="linear-gradient":this.currentColorType="radial-gradient"):-1<r.toLowerCase().indexOf("linear-gradient")||-1<r.toLowerCase().indexOf("radial-gradient")?(this.gradientColor=this.revertGradientToArray(r),-1<this.gradientColor.str.indexOf("linear-gradient")?this.currentColorType="linear-gradient":this.currentColorType="radial-gradient"):(this.getColorFormat(r||"#000"),this.currentColorType="single"),o||(this.changeColorType(!0),"single"!=this.currentColorType&&(this.setCurrentGradientColor(),this.updateAngleBar(),this.updateGradientColors(),this.rendGradientColors()))},setCurrentGradientColor:function(){this.getColorFormat(this.gradientColor.arry.colors[this.gradientIndex].color),this.fillPalette()},updateAngleBar:function(){s(this.dom).find(".current-angle span").html(this.gradientColor.arry.angle+"°"),s(this.dom).find(".current-angle .angle-bar").css({left:this.gradientColor.arry.angle/3.6+"%"})},updateGradientColorItem:function(r,o){s(this.dom).find(".gradient-item").eq(r).find(".color").css({background:o})},updateGradientBar:function(){var r=this.revertGradientToString(this.gradientColor.arry,!0);s(this.dom).find(".gradient-bar span").css({background:r.str}),s(this.dom).find(".gradient-item").removeClass("on").eq(this.gradientIndex).addClass("on")},rendGradientColors:function(){for(var r="",o=0;o<this.gradientColor.arry.colors.length;o++)r+='<div class="gradient-item iconfontcolorpicker iconcolorpicker1" style="left:'+this.gradientColor.arry.colors[o].per+'%">\n                            <div class="color" style="background:'+this.gradientColor.arry.colors[o].color+'"></div>\n                        </div>';s(this.dom).find(".gradient-colors").empty().append(r),s(this.dom).find(".gradient-item").removeClass("on").eq(this.gradientIndex).addClass("on")},setColorTypeDom:function(){s(this.dom).find(".color-type").get(0)&&(s(this.dom).find(".color-type li").removeClass("on"),s(this.dom).find(".color-type-item[data-type="+this.currentColorType+"]").addClass("on"),s(this.dom).find(".color-type").removeClass("down"),s(this.dom).find(".color-type .color-slidedown-curbox").get(0).innerHTML=s(this.dom).find(".color-type-item[data-type="+this.currentColorType+"]").get(0).innerHTML)},changeColorFormatType:function(r){s(this.dom).find(".color-format-type li").removeClass("on"),s(this.dom).find(".color-format-type-item[data-type="+this.currentColorFormat+"]").addClass("on"),s(this.dom).find(".color-format-type").removeClass("down"),s(this.dom).find(".color-format-type .color-slidedown-curbox").get(0).innerHTML=s(this.dom).find(".color-format-type-item[data-type="+this.currentColorFormat+"]").get(0).innerHTML;var o=this.getCurrentColor(this.option.autoConfirm);this.rendInputValue(),r||(this.option.onChange(o),this.option.autoConfirm&&this.option.onConfirm(o))},changeColorType:function(r){this.gradientIndex=0;var o=this.option.colorTypeOption.indexOf(this.currentColorType)<0;o&&(this.currentColorType=this.option.colorTypeOption[0]),"single"==this.currentColorType?(r&&!o||this.getColorFormat(this.gradientColor?this.gradientColor.arry.colors[0].color:"#ffffff"),s(this.dom).find(".color-gradient").hide()):(r&&!o||this.gradientColor||(this.gradientColor={type:this.currentColorType},this.initColorFormat({type:this.currentColorType,angle:0,colors:[{per:0,color:this.color.rgba},{per:100,color:"rgba(0,0,0,0)"}]})),this.gradientColor.arry.type!=this.currentColorType&&(this.gradientColor.arry.type=this.currentColorType,this.gradientColor=this.revertGradientToString(this.gradientColor.arry)),s(this.dom).find(".color-gradient").show(),this.rendGradientColors(),this.updateGradientBar(),this.updateAngleBar(),this.changeCurColorDom(),"linear-gradient"==this.currentColorType?s(this.dom).find(".gradient-angle").show():s(this.dom).find(".gradient-angle").hide()),this.setColorTypeDom(),this.rendInputValue(),this.setPosition()},getColorFormat:function(r){if(this.color=this.getColorFormatFunc(r),this.color.rgbav=this.color.rgba.slice(5,this.color.rgba.indexOf(")")).split(","),this.color.hslav=this.color.hsla.slice(5,this.color.hsla.indexOf(")")).split(",").map(function(r){return-1<r.indexOf("%")?r.slice(0,r.indexOf("%")):r}),this.dom){if("single"==this.currentColorType){if(this.changeCurColorDom(),!this.show)return;this.dom.querySelector(".current-color").style.background=this.color.rgba,this.dom.querySelector(".current-color-value input").value=this.color[this.currentColorFormat]}this.setBarPos()}},changeCurColorDom:function(){"single"==this.currentColorType?this.curcolordom.style.background=this.color.rgba:this.curcolordom.style.background=this.gradientColor.str},getColorFormatFunc:function(r){r.indexOf("rgb")<0&&r.indexOf("#")<0&&r.indexOf("hsl")<0&&(r="rgba(0,0,0,0)");r={rgba:(0,t.default)({color:r,format:"rgba"}).complete,hsla:(0,t.default)({color:r,format:"hsla"}).complete,hex:(0,t.default)({color:r,format:"hex"}).complete};return!r.rgba||-1<r.rgba.indexOf("NaN")?this.dom?void(this.dom.querySelector(".current-color-value input").value=this.color[this.currentColorFormat]):void 0:r},setBarPos:function(){this.opacitybar.style.top=100*(1-this.color.rgbav[3])+"%",0!=parseFloat(this.color.hslav[1])&&(this.huebar.style.top=100*this.color.hslav[0]/360+"%")},replace:function(){var r=""+(arguments.length<=0?void 0:arguments[0]);return arguments.length<3?r:r.replace(arguments.length<=1?void 0:arguments[1],arguments.length<=2?void 0:arguments[2])},revertGradientToArray:function(r){var o=this,n="";r=r.toLowerCase();r=this.replace(r,/(rgba\(.*?\))/gi,function(r){return o.getColorFormatFunc(r).hex}),-1<(r=this.replace(r,/(hsla\(.*?\))/gi,function(r){return o.getColorFormatFunc(r).hex})).toLowerCase().indexOf("radial-gradient")&&(n="radial-gradient"),-1<r.toLowerCase().indexOf("linear-gradient")&&(n="linear-gradient");for(var t=r.slice(r.toLowerCase().indexOf(n)+16,r.toLowerCase().lastIndexOf(")")).split(",").map(function(r){return r.trim()}),e={type:n,angle:"linear-gradient"==n?parseFloat(t[0]).toFixed(0):0,colors:[]},i="linear-gradient"==n?1:0;i<t.length;i++){var l=t[i].split(" ");e.colors.push({color:l[0],per:l[1]?parseFloat(l[1]):100*(i-1)/(t.length-2)})}return{str:this.revertGradientToString(e).str,arry:e}},revertGradientToString:function(r,o){var n=(o?"linear-gradient":r.type)+"(";o?n+="to right,":"linear-gradient"==r.type&&(n+=parseFloat(r.angle).toFixed(1)+"deg,");for(var t=0;t<r.colors.length;t++){var e=this.getColorFormatFunc(r.colors[t].color)[this.currentColorFormat];n+=(r.colors[t].color=e)+" "+parseFloat(r.colors[t].per).toFixed(1),""!=r.colors[t].per&&(n+="%"),t<r.colors.length-1&&(n+=",")}return{str:n+=")",arry:r}},$copy:function(r){var o=document.createElement("textarea");o.style.position="fixed",o.style.top="0",o.style.left="0",o.style.width="2em",o.style.height="2em",o.style.padding="0",o.style.border="none",o.style.outline="none",o.style.boxShadow="none",o.style.background="transparent",o.value=r,document.body.appendChild(o),o.select();try{var n=document.execCommand("copy")?"成功复制到剪贴板":"该浏览器不支持点击复制到剪贴板";layer.msg(n,{skin:"suclayer"})}catch(r){layer.msg("该浏览器不支持点击复制到剪贴板",{skin:"errorlayer"})}document.body.removeChild(o)},destroy:function(){s(this.dom).remove(),this.removeMouseDownEvent?this.removeMouseDownEvent():{},this.curcolordom.onclick=null}},e.XNColorPicker=i}()}();
 
 
-    // these code copied from https://github.com/EisFrei/IngressPortalHistoryFlags, made some modifications.
+    // Drawing path optimized for large portal counts (v1.3.3)
+    // thanks https://github.com/EisFrei/IngressPortalHistoryFlags
+    const LEVEL_TO_RADIUS = [7, 7, 7, 7, 8, 8, 9, 10, 11];
+    let _drawAllRaf = 0;
+    let _lastTileLevel = -1;
+
     function svgToIcon(str, s) {
-        const url = ("data:image/svg+xml," + encodeURIComponent(str)).replace(/#/g, '%23');
         return new L.Icon({
-            iconUrl: url,
+            iconUrl: 'data:image/svg+xml,' + encodeURIComponent(str),
             iconSize: [s, s],
             iconAnchor: [s / 2, s / 2],
-            className: 'no-pointer-events', //allows users to click on portal under the unique marker
-        })
+            className: 'no-pointer-events', // click-through to portal underneath
+        });
     }
-    function drawPortalFlags(portal) {
-        const drawMissing = window.plugin.upcv.settings.drawMissing;
-        var type = portal.options.ent[2][18];
-        portal._historyLayer = new L.LayerGroup();
 
-        if(!(type & UPC_FLAG) && (type & UPV_FLAG)){
-            L.marker(portal._latlng, {
-                icon: window.plugin.upcv.iconVisited[portal.options.level],
-                interactive: false,
-                keyboard: false,
-            }).addTo(portal._historyLayer);
+    function getCombinedSVGString(size, arcs, parts) {
+        const dim = size + 4;
+        const cx = dim / 2;
+        const r = size / 2;
+        const pathLen = size * Math.PI / (2 * parts);
+        const cap = size * Math.PI * (1 - 1 / (2 * parts));
+        const dashOffset = pathLen / parts * (parts - 1);
+        const baseRotate = 180 / parts + (parts - 1) * 135;
+
+        let circles = '';
+        for (let i = 0; i < arcs.length; i++) {
+            const rotate = baseRotate + arcs[i].offset * 90;
+            circles += '<circle stroke="' + arcs[i].color +
+                '" stroke-width="4" fill="transparent" cx="' + cx +
+                '" cy="' + cx + '" r="' + r +
+                '" stroke-dasharray="' + pathLen + ', ' + cap +
+                '" stroke-dashoffset="' + dashOffset +
+                '" transform="rotate(' + rotate + ', ' + cx + ', ' + cx + ')" />';
         }
-        if (drawMissing && !(type & UPV_FLAG) || !drawMissing && type & UPC_FLAG) {
-            L.marker(portal._latlng, {
-                icon: window.plugin.upcv.iconCaptured[portal.options.level],
-                interactive: false,
-                keyboard: false,
-            }).addTo(portal._historyLayer);
+        return '<svg width="' + dim + '" height="' + dim +
+            '" xmlns="http://www.w3.org/2000/svg">' + circles + '</svg>';
+    }
+
+    // visitKind: 0=none, 1=upv, 2=upc; bit2 = scout
+    function iconKey(visitKind, scout) {
+        return visitKind | (scout ? 4 : 0);
+    }
+
+    function getPortalHistoryType(portal) {
+        const ent = portal.options && portal.options.ent;
+        if (!ent || !ent[2] || ent[2][18] == null) return 0;
+        return ent[2][18] | 0;
+    }
+
+    function resolveIconKey(type) {
+        const s = window.plugin.upcv.settings;
+        const drawMissing = s.drawMissing;
+        let visitKind = 0;
+        let scout = 0;
+
+        // Preserve original draw semantics
+        if (!(type & UPC_FLAG) && (type & UPV_FLAG)) {
+            visitKind = 1;
+        } else if ((drawMissing && !(type & UPV_FLAG)) || (!drawMissing && (type & UPC_FLAG))) {
+            visitKind = 2;
         }
-        if (drawMissing && !(type & SCOUT_FLAG) || !drawMissing && type & SCOUT_FLAG) {
-            L.marker(portal._latlng, {
-                icon: window.plugin.upcv.iconScouted[portal.options.level],
-                interactive: false,
-                keyboard: false,
-            }).addTo(portal._historyLayer);
+
+        if ((drawMissing && !(type & SCOUT_FLAG)) || (!drawMissing && (type & SCOUT_FLAG))) {
+            scout = 1;
         }
-        portal._historyLayer.addTo(window.plugin.upcv.layerGroup);
+
+        if (!s.showVisited) visitKind = 0;
+        if (!s.showScouted) scout = 0;
+
+        return iconKey(visitKind, scout);
+    }
+
+    function createMarker(portal, icon) {
+        return L.marker(portal._latlng, {
+            icon: icon,
+            interactive: false,
+            keyboard: false,
+        });
+    }
+
+    function drawPortalFlags(portal) {
+        if (portal._historyLayer) {
+            window.plugin.upcv.layerGroup.removeLayer(portal._historyLayer);
+            portal._historyLayer = null;
+        }
+
+        const key = resolveIconKey(getPortalHistoryType(portal));
+        const icons = window.plugin.upcv.icons[portal.options.level | 0];
+        const icon = icons && icons[key];
+        if (!icon) return;
+
+        const marker = createMarker(portal, icon);
+        portal._historyLayer = marker;
+        marker.addTo(window.plugin.upcv.layerGroup);
     }
 
     function drawAllFlags() {
-        window.plugin.upcv.layerGroup.clearLayers();
-        var tileParams = window.getCurrentZoomTileParameters ? window.getCurrentZoomTileParameters() : window.getMapZoomTileParameters();
-        if (tileParams.level !== 0) {
+        const lg = window.plugin.upcv.layerGroup;
+        if (!lg) return;
+
+        const tileParams = window.getCurrentZoomTileParameters
+            ? window.getCurrentZoomTileParameters()
+            : window.getMapZoomTileParameters();
+        const level = tileParams.level;
+
+        if (level !== 0) {
+            if (_lastTileLevel === 0 || lg.getLayers().length) {
+                lg.clearLayers();
+            }
+            _lastTileLevel = level;
             return;
         }
+        _lastTileLevel = level;
 
-        for (let id in window.portals) {
-            drawPortalFlags(window.portals[id]);
+        // Detach during batch to avoid per-marker DOM thrashing
+        const mapRef = window.map;
+        const onMap = mapRef && mapRef.hasLayer(lg);
+        if (onMap) mapRef.removeLayer(lg);
+
+        lg.clearLayers();
+
+        const portals = window.portals;
+        for (const id in portals) {
+            if (!Object.prototype.hasOwnProperty.call(portals, id)) continue;
+            const portal = portals[id];
+            portal._historyLayer = null;
+
+            const key = resolveIconKey(getPortalHistoryType(portal));
+            const icons = window.plugin.upcv.icons[portal.options.level | 0];
+            const icon = icons && icons[key];
+            if (!icon) continue;
+
+            const marker = createMarker(portal, icon);
+            portal._historyLayer = marker;
+            lg.addLayer(marker);
         }
+
+        if (onMap) mapRef.addLayer(lg);
     }
+
+    function scheduleDrawAllFlags() {
+        if (_drawAllRaf) cancelAnimationFrame(_drawAllRaf);
+        _drawAllRaf = requestAnimationFrame(function () {
+            _drawAllRaf = 0;
+            drawAllFlags();
+        });
+    }
+
     function count_portals_stat(){
         var displayBounds = map.getBounds();
         var upv = 0
@@ -138,7 +236,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         var total = 0
 
         $.each(window.portals, function(i, portal) {
-            var type = portal.options.ent[2][18];
+            var type = getPortalHistoryType(portal);
             var visit_state = type&2?2:type&1
             var scout_state = type&4
 
@@ -159,13 +257,6 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         return {"upv":upv, "upc":upc, "scouted":scouted, "total":total}
     }
 
-    function getSVGString(size, color, parts, offset) {
-        const path = size * Math.PI/(2*parts);
-        const cap = size * Math.PI*(1-1/(2*parts))
-        const arcOffset = path / parts * (parts - 1);
-        const rotate = 180/parts+(parts-1)*135+offset*90;
-        return `<svg width="${(size+4)}" height="${(size+4)}" xmlns="http://www.w3.org/2000/svg"><circle stroke="${color}" stroke-width="4" fill="transparent" cx="${(size+4)/2}" cy="${(size+4)/2}" r="${(size/2)}" stroke-dasharray="${path}, ${cap}" stroke-dashoffset="${arcOffset}" transform="rotate(${rotate}, ${((size+4)/2)}, ${((size+4)/2)})" /></svg>`;
-    }
     function format(str) {
       var re = /%s/;
       for(var i = 1; i < arguments.length; i++) {
@@ -195,16 +286,16 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
         return $([]);
       var large_arc = (endAngle - startAngle) > 0.5 ? 1 : 0;
       startAngle = 0.5 - startAngle;
-      endAngle   = 0.5 - endAngle;      
+      endAngle   = 0.5 - endAngle;
 
       var p1x = Math.sin(startAngle * 2 * Math.PI) * RADIUS;
       var p1y = Math.cos(startAngle * 2 * Math.PI) * RADIUS;
       var p2x = Math.sin(endAngle   * 2 * Math.PI) * RADIUS;
-      var p2y = Math.cos(endAngle   * 2 * Math.PI) * RADIUS;      
+      var p2y = Math.cos(endAngle   * 2 * Math.PI) * RADIUS;
 
       // for a full circle, both coordinates would be identical, so no circle would be drawn
       if(startAngle == 0.5 && endAngle == -0.5)
-        p2x -= 1E-5;      
+        p2x -= 1E-5;
 
       var path = $('<path>')
         .attr({
@@ -265,50 +356,61 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
     }
 
     function createIcons() {
-        var LEVEL_TO_RADIUS = [7, 7, 7, 7, 8, 8, 9, 10, 11];
-        window.plugin.upcv.iconCaptured = {};
-        window.plugin.upcv.iconVisited = {};
-        window.plugin.upcv.iconScouted = {};
+        const s = window.plugin.upcv.settings;
+        const parts = Math.max(1, (s.showVisited ? 1 : 0) + (s.showScouted ? 1 : 0));
+        window.plugin.upcv._parts = parts;
+        window.plugin.upcv.icons = {};
 
-        const parts = window.plugin.upcv.settings.showVisited + window.plugin.upcv.settings.showScouted;
+        for (let lvl = 0; lvl < LEVEL_TO_RADIUS.length; lvl++) {
+            const size = LEVEL_TO_RADIUS[lvl] * 2 + 8;
+            const dim = size + 4;
+            const byKey = {};
 
-        LEVEL_TO_RADIUS.forEach((el, idx) => {
-            let size = el * 2 + 8;
-            let offset = 0;
-            if (window.plugin.upcv.settings.showVisited) {
-                window.plugin.upcv.iconVisited[idx] = svgToIcon(getSVGString(size, window.plugin.upcv.settings.upv_color, parts, offset), size + 4);
-                window.plugin.upcv.iconCaptured[idx] = svgToIcon(getSVGString(size, window.plugin.upcv.settings.upc_color, parts, offset), size + 4);
-                offset++;
-            } else {
-                window.plugin.upcv.iconVisited[idx] = svgToIcon(getSVGString(size, 'transparent', parts, offset), size + 4);
-                window.plugin.upcv.iconCaptured[idx] = svgToIcon(getSVGString(size, 'transparent', parts, offset), size + 4);
+            for (let visitKind = 0; visitKind <= 2; visitKind++) {
+                for (let scout = 0; scout <= 1; scout++) {
+                    const arcs = [];
+                    let offset = 0;
+                    if (s.showVisited && visitKind) {
+                        arcs.push({
+                            color: visitKind === 1 ? s.upv_color : s.upc_color,
+                            offset: offset,
+                        });
+                        offset++;
+                    } else if (s.showVisited) {
+                        offset++; // keep scout arc slot stable when visit hidden
+                    }
+                    if (s.showScouted && scout) {
+                        arcs.push({ color: s.scouted_color, offset: offset });
+                    }
+                    const key = iconKey(visitKind, scout);
+                    byKey[key] = arcs.length
+                        ? svgToIcon(getCombinedSVGString(size, arcs, parts), dim)
+                        : null;
+                }
             }
-            if (window.plugin.upcv.settings.showScouted) {
-                window.plugin.upcv.iconScouted[idx] = svgToIcon(getSVGString(size, window.plugin.upcv.settings.scouted_color, parts, offset), size + 4);
-            } else {
-                window.plugin.upcv.iconScouted[idx] = svgToIcon(getSVGString(size, 'transparent', parts, offset), size + 4);
-            }
-        });
+            window.plugin.upcv.icons[lvl] = byKey;
+        }
     }
 
     window.plugin.upcv.removePortalFromMap = function (data) {
-        if (!data.portal._historyLayer) {
-            return;
-        }
-        window.plugin.upcv.layerGroup.removeLayer(data.portal._historyLayer);
-    }
+        const portal = data.portal;
+        if (!portal || !portal._historyLayer) return;
+        window.plugin.upcv.layerGroup.removeLayer(portal._historyLayer);
+        portal._historyLayer = null;
+    };
 
     window.plugin.upcv.addToPortalMap = function (data) {
-        var type = data.portal.options.ent[2][18];
-        var portal_level = data.portal.options.data.level;
-        if (portal_level == undefined) return;
-        var tileParams = window.getCurrentZoomTileParameters ? window.getCurrentZoomTileParameters() : window.getMapZoomTileParameters();
+        const portal = data.portal;
+        if (!portal || portal.options.data.level == undefined) return;
+        const tileParams = window.getCurrentZoomTileParameters
+            ? window.getCurrentZoomTileParameters()
+            : window.getMapZoomTileParameters();
         if (tileParams.level === 0) {
-            drawPortalFlags(data.portal);
+            drawPortalFlags(portal);
         } else {
             window.plugin.upcv.removePortalFromMap(data);
         }
-    }
+    };
 
     window.plugin.upcv.toggleDisplayMode = function () {
         var portals_state = count_portals_stat()
@@ -539,7 +641,7 @@ function(r){for(var o=0;o<r.length;o++){var n=r[o],t=document.getElementsByTagNa
 
         window.addHook('portalAdded', window.plugin.upcv.addToPortalMap);
         window.addHook('portalRemoved', window.plugin.upcv.removePortalFromMap);
-        window.map.on('zoom', drawAllFlags);
+        window.map.on('zoomend', scheduleDrawAllFlags);
         $('#toolbox').append('<a onclick="window.plugin.upcv.toggleDisplayMode()">Portal Visited</a>');
 
         window.addPortalHighlighter('Portal UPC/V', window.plugin.upcv.upcv);
